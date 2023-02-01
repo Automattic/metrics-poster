@@ -1,0 +1,29 @@
+{
+    "name": "omar/metric-poster",
+    "description": "Helps to automate weekly type metrics and posts.",
+    "type": "project",
+    "require": {
+        "guzzlehttp/guzzle": "^7.0",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "license": "mit",
+	"autoload": {
+		"classmap": [
+			"src/"
+		],
+		"files": [
+			"script.php"
+		]
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"MetricPoster\\Tests\\": "tests/"
+		}
+	},
+    "authors": [
+        {
+            "name": "Omar Serrano",
+            "email": "omar.serrano@automattic.com"
+        }
+    ]
+}
