@@ -10,7 +10,12 @@ use MetricPoster\NewRelicGQL;
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
-$args = getopt('', ['week:', 'clientid:', 'metrics:']);
+// Load .env file.
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
+
+// Get args from user.
+$args = getopt('', ['week:', 'clientid:', 'id:', 'metrics:']);
 
 // Bail early for any missing args.
 if (!isset($args['week'])) {
@@ -20,13 +25,25 @@ if (!isset($args['week'])) {
 // Set year to current year if not set.
 $year = !isset($args['year']) ? date('Y') : $args['year'];
 
+$client_id = '';
+
 if (!isset($args['clientid'])) {
-	exit("Missing client id value. .i.e script.php --week 51 --clientid 368\n");
+
+	if (isset($args['id'])) {
+		$client_id = $args['id'];
+	}else{
+		if(isset($_ENV['NEW_RELIC_ACCOUNT_ID'])){
+			$client_id = $_ENV['NEW_RELIC_ACCOUNT_ID'];
+		}else{
+			exit("Missing client id value. .i.e script.php --week 51 --id 368\n");
+		}
+	}
+
+} else {
+	$client_id = $args['clientid'];
 }
 
-$dotenv = Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
-$default_metrics = 'apdex,slowest_transactions,php_errors,php_warnings,php_notices,php_deprecated,php_strict,php_recoverable,php_core,php_user,php_other,php_fatal,php_uncaught,php_exception,php_slowest,php_slowest_db,php_slowest_external,response_time';
+$default_metrics = 'apm_summary';
 
 // Get metric type options from user.
 if( isset( $args['metrics'] ) ) {
@@ -36,13 +53,12 @@ if( isset( $args['metrics'] ) ) {
 	}
 
 	// Fetch metrics from NewRelic and build metric object for DI.
-	// TODO: Replace hard coded year.
-	$nr_metrics = new NewRelicGQL( $args['week'], $year, $args['clientid'], $args['metrics'] );
+	$nr_metrics = new NewRelicGQL( $args['week'], $year, $client_id, $args['metrics'] );
 	// var_dump( $nr_metrics->get_apm_summary() );
 	// var_dump( $nr_metrics->get_top_404s() );
 	// var_dump( $nr_metrics->get_top_500s() );
 
-	$pg = new PostGenerator( __DIR__ . '/post.tpl.html', $args['week'], $year, $args['clientid'], $nr_metrics->get_top_404s() );
+	$pg = new PostGenerator( __DIR__ . '/post.tpl.html', $args['week'], $year, $client_id, $nr_metrics );
 	$pg->create();
 	exit( 'Done' );
 } else {

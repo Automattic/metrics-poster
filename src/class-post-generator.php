@@ -43,39 +43,42 @@ class PostGenerator
 
 		$dom->getElementById("p2-title")->nodeValue = "Weekly Metrics: $fweek_title";
 
-		// create a DOMDocument 2x2 table with a header row and append to $dom.
-		$table = $dom->createElement('table');
-		$table->setAttribute('class', 'wp-block-table');
-		$thead = $dom->createElement('thead');
-		$tbody = $dom->createElement('tbody');
-						
-		// append rows to table.
-		foreach ($nr_metrics['data']['actor']['account']['nrql']['results'] as $metric) {
-			$tr = $dom->createElement('tr');
-			$td = $dom->createElement('td', $metric['facet']);
-			$tr->appendChild($td);
-			$td = $dom->createElement('td', (string) $metric['count']);
-			$tr->appendChild($td);
-			$tbody->appendChild($tr);
+		$content_html = $dom->createElement('div');
+
+		// create html elements based on $nr_metrics.
+		foreach($nr_metrics->results as $metric_key => $metric){
+			var_dump($metric_key);
+			switch ($metric_key) {
+				case '404s':
+					$m = $metric['data']['actor']['account']['nrql']['results'];
+					$html = $this->create_table($dom, $m, 'Top 404s', 'Count');
+					$content_html->appendChild($html);
+					break;
+				case '500s':
+					$m = $metric['data']['actor']['account']['nrql']['results'];
+					$html = $this->create_table($dom, $m, 'Top 500s', 'Count');
+					$content_html->appendChild($html);
+					break;
+				case 'errors':
+					$m = $metric['data']['actor']['account']['nrql']['results'];
+					$html = $this->create_table($dom, $m, 'Top PHP Errors', 'Count');
+					$content_html->appendChild($html);
+					break;
+				case 'warnings':
+					$m = $metric['data']['actor']['account']['nrql']['results'];
+					$html = $this->create_table($dom, $m, 'Top PHP Warnings', 'Count');
+					$content_html->appendChild($html);
+					break;
+				default:
+					break;
+			}
 		}
-
-		// create header row.
-		$tr = $dom->createElement('tr');
-		$th = $dom->createElement('th', 'Metric');
-		$tr->appendChild($th);
-		$th = $dom->createElement('th', 'Value');
-		$tr->appendChild($th);
-
-
-		$thead->appendChild($tr);
-		$table->appendChild($thead);
-		$table->appendChild($tbody);
 
 		// find the string {{pattern}} in $dom template and replace with $table element.
 		$xpath = new \DOMXPath($dom);
 		$nodes = $xpath->query("//*[contains(text(), '{{content}}')]");
 		foreach ($nodes as $node) {
-			$node->parentNode->replaceChild($table, $node);
+			$node->parentNode->replaceChild($content_html, $node);
 		}
 
 		// final output
@@ -85,6 +88,37 @@ class PostGenerator
 		// copy to clipboard.
 		shell_exec("echo " . escapeshellarg($p2_html) . " | pbcopy");
 		exit("\npost copied to clipboard\n");
+	}
 
+	public function create_table( &$dom, $nr_metrics, $header1 = 'Metric', $header2 = 'Count' ){
+		// create a DOMDocument 2x2 table with a header row and append to $dom.
+		$table = $dom->createElement('table');
+		$table->setAttribute('class', 'wp-block-table');
+		$thead = $dom->createElement('thead');
+		$tbody = $dom->createElement('tbody');
+						
+		// append rows to table.
+		foreach ($nr_metrics as $metric) {
+			$tr = $dom->createElement('tr');
+			$td = $dom->createElement('td', htmlentities($metric['facet']));
+			$tr->appendChild($td);
+			$td = $dom->createElement('td', (string) $metric['count']);
+			$tr->appendChild($td);
+			$tbody->appendChild($tr);
+		}
+
+		// create header row.
+		$tr = $dom->createElement('tr');
+		$th = $dom->createElement('th', $header1);
+		$tr->appendChild($th);
+		$th = $dom->createElement('th', $header2);
+		$tr->appendChild($th);
+
+
+		$thead->appendChild($tr);
+		$table->appendChild($thead);
+		$table->appendChild($tbody);
+
+		return $table;
 	}
 }
