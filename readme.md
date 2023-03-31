@@ -20,5 +20,5 @@ composer install
 ### Create a P2 post
 
 ```
-php ./script.php --week 51 --clientid 3 --p2 https://coolp2.wordpress.com
+php ./script.php --week 12 --metrics 404s,errors,warnings
 ```

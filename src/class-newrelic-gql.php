@@ -8,27 +8,23 @@ use GuzzleHttp\Client;
 
 class NewRelicGQL
 {
-
 	// newrelic GQL endpoint.
 	const NR_GQL_URL = 'https://api.newrelic.com/graphql';
 
 	public string $app_guid;
 	public array $date_range;
-	public string $clientid;
+	public int $clientid;
 	public array $metrics;
 	public Client $client;
 	public $results;
 
 	// constructor with default values.
-	public function __construct($week = '', $year = '', $clientid = '', $metrics = '')
+	public function __construct(int $week, int $year, int $clientid, string $metrics)
 	{
 		$date_range = get_week_start_end((int) $week, $year);
 		$this->date_range = $date_range;
 		$this->clientid = $clientid;
 		$this->metrics = explode(',', $metrics);
-
-		// $this->app_guid = $_ENV['NEW_RELIC_APP_GUID'];
-		// $this->account_id = $_ENV['NEW_RELIC_ACCOUNT_ID'];
 
 		$this->client = new Client([
 			'base_uri' => self::NR_GQL_URL,
@@ -41,30 +37,26 @@ class NewRelicGQL
 	}
 
 	// get results from newrelic.
-	public function get_results(){
+	public function get_results(): array
+	{
 		$results = [];
-		foreach($this->metrics as $metric){
+
+		$metric_methods = [
+			'apm' => 'get_apm_summary',
+			'404s' => 'get_top_404s',
+			'500s' => 'get_top_500s',
+			'errors' => 'get_php_errors',
+			'warnings' => 'get_php_warnings'
+		];
+
+		foreach ($this->metrics as $metric) {
 			$metric = strtolower($metric);
-			switch ($metric) {
-				case 'apm':
-					$results['apm'] = $this->get_apm_summary();
-					break;
-				case '404s':
-					$results['404s'] = $this->get_top_404s();
-					break;
-				case '500s':
-					$results['500s'] = $this->get_top_500s();
-					break;
-				case 'errors':
-					$results['errors'] = $this->get_php_errors();
-					break;
-				case 'warnings':
-					$results['warnings'] = $this->get_php_warnings();
-					break;
-				default:
-					break;
+
+			if (array_key_exists($metric, $metric_methods)) {
+				$results[$metric] = $this->{$metric_methods[$metric]}();
 			}
 		}
+
 		return $results;
 	}
 
@@ -108,24 +100,28 @@ class NewRelicGQL
 	public function get_top_404s()
 	{
 
+		$start = $this->date_range["week_start_system"];
+		$end = $this->date_range["week_end_system"];
+		$limit = 25;
+
 		// nrql query to get top 404s.
-		$query = <<<QUERY
+		$query = <<<GQL
 		{
 			actor {
-				account(id: $this->clientid) {
-				  nrql(query: "SELECT count(*) FROM Transaction SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' WHERE response.statusCode = 404 and request.uri > '' FACET request.uri LIMIT 25") {
-					results,
-					embeddedChartUrl,
-					staticChartUrl
-				  }
+				account(id: {$this->clientid}) {
+					nrql(query: "SELECT count(*) FROM Transaction SINCE '$start' UNTIL '$end' WHERE response.statusCode = 404 and request.uri > '' FACET request.uri LIMIT $limit") {
+						results,
+						embeddedChartUrl,
+						staticChartUrl
+					}
 				}
-			  }
+			}
 		}
-		QUERY;
+		GQL;
 
 		$response = $this->client->request('POST', '', [
 			'json' => [
-				'query' => $query,
+				'query' => $query
 			],
 		]);
 
@@ -161,7 +157,8 @@ class NewRelicGQL
 		return json_decode($body, true);
 	}
 
-	public function get_php_errors(){
+	public function get_php_errors()
+	{
 		// nrql query to get php errors.
 		$query = <<<QUERY
 		{
@@ -187,7 +184,8 @@ class NewRelicGQL
 		return json_decode($body, true);
 	}
 
-	public function get_php_cron_errors(){
+	public function get_php_cron_errors()
+	{
 		// nrql query to get php errors.
 		$query = <<<QUERY
 		{
@@ -213,7 +211,8 @@ class NewRelicGQL
 		return json_decode($body, true);
 	}
 
-	public function get_php_warnings(){
+	public function get_php_warnings()
+	{
 		// nrql query to get php warnings.
 		$query = <<<QUERY
 		{
