@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace MetricPoster;
 
 use Dotenv\Dotenv;
-use MetricPoster\NewRelic;
+use MetricPoster\NewRelicGQL;
 
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/vendor/autoload.php';
@@ -16,6 +16,9 @@ $args = getopt('', ['week:', 'clientid:', 'metrics:']);
 if (!isset($args['week'])) {
 	exit("Missing week value. .i.e script.php --week 51\n");
 }
+
+// Set year to current year if not set.
+$year = !isset($args['year']) ? date('Y') : $args['year'];
 
 if (!isset($args['clientid'])) {
 	exit("Missing client id value. .i.e script.php --week 51 --clientid 368\n");
@@ -33,8 +36,13 @@ if( isset( $args['metrics'] ) ) {
 	}
 
 	// Fetch metrics from NewRelic and build metric object for DI.
-	$nr_metrics = new NewRelic( $args['week'], 2023, $args['clientid'], $args['metrics'] );
-	$pg = new PostGenerator( __DIR__ . '/post.tpl.html', $args['week'], 2023, $args['clientid'], $nr_metrics );
+	// TODO: Replace hard coded year.
+	$nr_metrics = new NewRelicGQL( $args['week'], $year, $args['clientid'], $args['metrics'] );
+	// var_dump( $nr_metrics->get_apm_summary() );
+	// var_dump( $nr_metrics->get_top_404s() );
+	// var_dump( $nr_metrics->get_top_500s() );
+
+	$pg = new PostGenerator( __DIR__ . '/post.tpl.html', $args['week'], $year, $args['clientid'], $nr_metrics->get_top_404s() );
 	$pg->create();
 	exit( 'Done' );
 } else {
