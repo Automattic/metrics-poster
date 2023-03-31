@@ -54,10 +54,6 @@ if( isset( $args['metrics'] ) ) {
 
 	// Fetch metrics from NewRelic and build metric object for DI.
 	$nr_metrics = new NewRelicGQL( $args['week'], $year, $client_id, $args['metrics'] );
-	// var_dump( $nr_metrics->get_apm_summary() );
-	// var_dump( $nr_metrics->get_top_404s() );
-	// var_dump( $nr_metrics->get_top_500s() );
-
 	$pg = new PostGenerator( __DIR__ . '/post.tpl.html', $args['week'], $year, $client_id, $nr_metrics );
 	$pg->create();
 	exit( 'Done' );

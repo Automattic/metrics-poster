@@ -43,50 +43,64 @@ class PostGenerator
 
 		$dom->getElementById("p2-title")->nodeValue = "Weekly Metrics: $fweek_title";
 
-		$content_html = $dom->createElement('div');
-
 		// create html elements based on $nr_metrics.
 		foreach($nr_metrics->results as $metric_key => $metric){
-			var_dump($metric_key);
 			switch ($metric_key) {
 				case '404s':
 					$m = $metric['data']['actor']['account']['nrql']['results'];
 					$html = $this->create_table($dom, $m, 'Top 404s', 'Count');
-					$content_html->appendChild($html);
+					
+					// append comment to $dom.
+					$comment = $dom->createComment(' wp:table ');
+					$dom->appendChild($comment);
+					$dom->appendChild($html);
+					$comment = $dom->createComment(' /wp:table ');
+					$dom->appendChild($comment);
 					break;
 				case '500s':
 					$m = $metric['data']['actor']['account']['nrql']['results'];
 					$html = $this->create_table($dom, $m, 'Top 500s', 'Count');
-					$content_html->appendChild($html);
+					
+					// append comment to $dom.
+					$comment = $dom->createComment(' wp:table ');
+					$dom->appendChild($comment);
+					$dom->appendChild($html);
+					$comment = $dom->createComment(' /wp:table ');
+					$dom->appendChild($comment);
 					break;
 				case 'errors':
 					$m = $metric['data']['actor']['account']['nrql']['results'];
 					$html = $this->create_table($dom, $m, 'Top PHP Errors', 'Count');
-					$content_html->appendChild($html);
+					
+					// append comment to $dom.
+					$comment = $dom->createComment(' wp:table ');
+					$dom->appendChild($comment);
+					$dom->appendChild($html);
+					$comment = $dom->createComment(' /wp:table ');
+					$dom->appendChild($comment);
 					break;
 				case 'warnings':
 					$m = $metric['data']['actor']['account']['nrql']['results'];
 					$html = $this->create_table($dom, $m, 'Top PHP Warnings', 'Count');
-					$content_html->appendChild($html);
+					
+					// append comment to $dom.
+					$comment = $dom->createComment(' wp:table ');
+					$dom->appendChild($comment);
+					$dom->appendChild($html);
+					$comment = $dom->createComment(' /wp:table ');
+					$dom->appendChild($comment);
 					break;
 				default:
 					break;
 			}
 		}
 
-		// find the string {{pattern}} in $dom template and replace with $table element.
-		$xpath = new \DOMXPath($dom);
-		$nodes = $xpath->query("//*[contains(text(), '{{content}}')]");
-		foreach ($nodes as $node) {
-			$node->parentNode->replaceChild($content_html, $node);
-		}
-
 		// final output
-		$p2_html = $dom->saveHTML();
-		echo $p2_html;
+		$content_html = $dom->saveHTML();
+		echo $content_html;
 
 		// copy to clipboard.
-		shell_exec("echo " . escapeshellarg($p2_html) . " | pbcopy");
+		shell_exec("echo " . escapeshellarg($content_html) . " | pbcopy");
 		exit("\npost copied to clipboard\n");
 	}
 
@@ -100,9 +114,22 @@ class PostGenerator
 		// append rows to table.
 		foreach ($nr_metrics as $metric) {
 			$tr = $dom->createElement('tr');
-			$td = $dom->createElement('td', htmlentities($metric['facet']));
+
+			// sanitize and escape $metric['facet'] to prevent XSS.
+			$sanitized_metric = htmlspecialchars($metric['facet'], ENT_QUOTES);
+
+			$td = $dom->createElement('td', $sanitized_metric);
 			$tr->appendChild($td);
-			$td = $dom->createElement('td', (string) $metric['count']);
+
+			// if $metric['count'] is not a number, set it to 0.
+			if( ! is_numeric($metric['count']) ) {
+				$metric['count'] = 0;
+			}
+
+			// format count to be human readable.
+			$fcount = number_format($metric['count']);
+
+			$td = $dom->createElement('td', $fcount);
 			$tr->appendChild($td);
 			$tbody->appendChild($tr);
 		}
@@ -121,4 +148,5 @@ class PostGenerator
 
 		return $table;
 	}
+
 }
