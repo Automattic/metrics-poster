@@ -58,8 +58,7 @@ if( isset( $args['metrics'] ) ) {
 	// Fetch metrics from NewRelic and build metric object for DI.
 	$nr_metrics = new NewRelicGQL( (int) $args['week'], (int) $year, (int) $client_id, $args['metrics'] );
 	$pg = new PostGenerator( GUTENBERG_TPL . '/post.tpl.html', (int) $args['week'], (int) $year, (int) $client_id, $nr_metrics );
-	$pg->create();
-	exit( 'Done' );
+	$pg->create_post();
 } else {
 	exit("Missing metric type. .i.e script.php --week 51 --clientid 368 --metrics $default_metrics\n");
 }

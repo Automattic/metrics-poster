@@ -1,6 +1,7 @@
 <?php
 
-function get_week_start_end( $week, $year ) {
+function get_week_start_end($week, $year)
+{
 	$dto = new DateTime();
 
 	// $dayOfWeek = 0, Sunday - Saturday.
@@ -17,10 +18,18 @@ function get_week_start_end( $week, $year ) {
 	return $ret;
 }
 
-function dom_string_replace( &$dom, $match, $new_value ){
-	$xpath = new \DOMXPath($dom);
-	$nodes = $xpath->query("//*[contains(text(), '$match')]");
+function dom_string_replace(DOMDocument &$dom, string $match, mixed $new_value): void
+{
+	$xpath = new DOMXPath($dom);
+	$nodes = $xpath->query("//*[not(self::script or self::style)]/text()|//@*|//comment()");
+
 	foreach ($nodes as $node) {
-		$node->nodeValue = str_replace($match, $new_value, $node->nodeValue);
+		if ($node instanceof DOMText) {
+			$node->nodeValue = str_replace($match, $new_value, $node->nodeValue);
+		} elseif ($node instanceof DOMAttr) {
+			$node->value = str_replace($match, $new_value, $node->value);
+		} elseif ($node instanceof DOMComment) {
+			$node->nodeValue = str_replace($match, $new_value, $node->nodeValue);
+		}
 	}
 }

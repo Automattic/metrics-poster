@@ -25,7 +25,7 @@ class PostGenerator
 		$this->nr_metrics = $nr_metrics;
 	}
 
-	public function create(): void
+	public function create_post(): void
 	{
 		$nr_metrics = $this->nr_metrics->results;
 
@@ -170,25 +170,40 @@ class PostGenerator
 		return $table;
 	}
 
-	public function create_cwv_html( $nr_metrics ){
-		// Load the template file into a DOMDocument.
-		$html = file_get_contents( GUTENBERG_TPL . '/cwv.tpl.html' );
+	public function create_cwv_html($nr_metrics) {
+		$html = file_get_contents(GUTENBERG_TPL . '/cwv.tpl.html');
+	
 		$dom = new DOMDocument();
 		$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
-
+	
 		$metric = $nr_metrics[0];
-
-		$m = $metric['percentile.cumulativeLayoutShift'];
-		dom_string_replace( $dom, '{{cls}}', round($m['75'], 2));
-
-		$m = $metric['percentile.firstInputDelay'];
-		dom_string_replace( $dom, '{{fid}}', round($m['75'], 2) . 'ms');
-
-		$m = $metric['percentile.largestContentfulPaint'];
-
-		dom_string_replace( $dom, '{{lcp}}', round($m['75'], 2) . 's');
-
+	
+		$this->replaceMetric($dom, $metric, 'CLS', 'cumulativeLayoutShift', 0.1, 0.25, '75', 's');
+	
+		$this->replaceMetric($dom, $metric, 'FID', 'firstInputDelay', 100, 300, '75', 'ms');
+	
+		$this->replaceMetric($dom, $metric, 'LCP', 'largestContentfulPaint', 2.5, 4, '75', 's');
+	
 		return $dom->documentElement;
-
 	}
+	
+	private function replaceMetric( &$dom, $metric, $metricName, $metricKey, $goodValue, $badValue, $percentile, $unit) {
+		$m = $metric['percentile.' . $metricKey];
+		$value = round($m[$percentile], 2);
+		$textColor = 'black';
+		$colorClass = 'luminous-vivid-amber';
+	
+		if ($value <= $goodValue) {
+			$colorClass = 'vivid-green-cyan';
+		} else if ($value > $badValue) {
+			$colorClass = 'vivid-red';
+			$textColor = 'white';
+		}
+	
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '}}', $value . $unit);
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '-text}}', 'has-' . $textColor . '-color has-text-color');
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '-text-color}}', $textColor);
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '-color}}', $colorClass);
+	}
+	
 }
