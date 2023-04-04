@@ -14,8 +14,9 @@ class PostGenerator
 	public int $year;
 	public int $clientid;
 	public $nr_metrics;
+	public bool $show_title;
 
-	public function __construct(string $file_path, int $week, int $year, int $id, $nr_metrics)
+	public function __construct(string $file_path, int $week, int $year, int $id, $nr_metrics, bool $show_title)
 	{
 		print "In PostGenerator constructor\n";
 		$this->template_file = $file_path;
@@ -23,6 +24,7 @@ class PostGenerator
 		$this->year = $year;
 		$this->clientid = $id;
 		$this->nr_metrics = $nr_metrics;
+		$this->show_title = $show_title;
 	}
 
 	public function create_post(): void
@@ -42,7 +44,10 @@ class PostGenerator
 		$date_range = get_week_start_end($this->week, $this->year);
 		$fweek_title = sprintf('%s %s-%s, %s', $date_range['week_start_month'], $date_range['week_start_day'], $date_range['week_end_day'], $this->year);
 		$title = "Weekly Metrics: $fweek_title";
-		$dom->getElementById("p2-title")->nodeValue = $title;
+
+		if( $this->show_title ) {
+			$dom->getElementById("p2-title")->nodeValue = $title;
+		}
 
 		// Create the post content with the metrics.
 		foreach ($nr_metrics as $metric_key => $metric) {
@@ -50,17 +55,19 @@ class PostGenerator
 				case 'cwv':
 					$m = $metric['data']['actor']['account']['nrql']['results'];
 					$cwv_template_html = $this->create_cwv_html($m);
+					$importedNode = $dom->importNode($cwv_template_html, true);
 					
 					// create comment.
 					$comment = $dom->createComment(' wp:columns {"verticalAlignment":null,"style":{"spacing":{"padding":{"top":"0","right":"0","bottom":"0","left":"0"}}},"fontSize":"large"} ');
 					$dom->appendChild($comment);
 
-					$importedNode = $dom->importNode($cwv_template_html, true);
+					// append importedNode to dom.
 					$dom->appendChild($importedNode);
 
 					// create closing comment and append to dom.
-					$comment = $dom->createComment(" /wp:columns ");
+					$comment = $dom->createComment(' /wp:columns ');
 					$dom->appendChild($comment);
+
 					break;
 				case '404s':
 				case '500s':
