@@ -14,6 +14,9 @@ require_once __DIR__ . '/vendor/autoload.php';
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
 
+// define global constants.
+define('GUTENBERG_TPL', __DIR__ . '/gutenberg-templates');
+
 // Get args from user.
 $args = getopt('', ['week:', 'clientid:', 'id:', 'metrics:']);
 
@@ -54,7 +57,7 @@ if( isset( $args['metrics'] ) ) {
 
 	// Fetch metrics from NewRelic and build metric object for DI.
 	$nr_metrics = new NewRelicGQL( (int) $args['week'], (int) $year, (int) $client_id, $args['metrics'] );
-	$pg = new PostGenerator( __DIR__ . '/post.tpl.html', (int) $args['week'], (int) $year, (int) $client_id, $nr_metrics );
+	$pg = new PostGenerator( GUTENBERG_TPL . '/post.tpl.html', (int) $args['week'], (int) $year, (int) $client_id, $nr_metrics );
 	$pg->create();
 	exit( 'Done' );
 } else {

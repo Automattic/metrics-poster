@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MetricPoster;
 
+use GuzzleHttp\Client;
 use \DOMDocument;
 
 class PostGenerator
@@ -39,12 +40,28 @@ class PostGenerator
 
 		// Create the post title with the week and year.
 		$date_range = get_week_start_end($this->week, $this->year);
-		$fweek_title = sprintf('%s %s-%s, %s', $date_range['week_start_month'], $date_range['week_start_day'], $date_range['week_end_day'], $this->year);		
-		$dom->getElementById("p2-title")->nodeValue = "Weekly Metrics: $fweek_title";
+		$fweek_title = sprintf('%s %s-%s, %s', $date_range['week_start_month'], $date_range['week_start_day'], $date_range['week_end_day'], $this->year);
+		$title = "Weekly Metrics: $fweek_title";
+		$dom->getElementById("p2-title")->nodeValue = $title;
 
 		// Create the post content with the metrics.
 		foreach ($nr_metrics as $metric_key => $metric) {
 			switch ($metric_key) {
+				case 'cwv':
+					$m = $metric['data']['actor']['account']['nrql']['results'];
+					$cwv_template_html = $this->create_cwv_html($m);
+					
+					// create comment.
+					$comment = $dom->createComment(' wp:columns {"verticalAlignment":null,"style":{"spacing":{"padding":{"top":"0","right":"0","bottom":"0","left":"0"}}},"fontSize":"large"} ');
+					$dom->appendChild($comment);
+
+					$importedNode = $dom->importNode($cwv_template_html, true);
+					$dom->appendChild($importedNode);
+
+					// create closing comment and append to dom.
+					$comment = $dom->createComment(" /wp:columns ");
+					$dom->appendChild($comment);
+					break;
 				case '404s':
 				case '500s':
 				case 'errors':
@@ -70,13 +87,44 @@ class PostGenerator
 
 		// save the DOMDocument as HTML.
 		$content_html = $dom->saveHTML();
-		echo $content_html;
+		
+		// If is dev, ignore zapier.
+		if ($_ENV['ENV'] === 'dev') {
+			
+			echo $content_html;
+			
+			// copy the HTML to the clipboard.
+			// TODO: make this work better. Currently, only partial HTML is copied.
+			shell_exec("echo " . escapeshellarg($content_html) . " | pbcopy");
+			exit("\npost copied to clipboard\n");
+		}
+		
+		// Send the post to Zapier.
+		$this->zapier_webhook_trigger($_ENV['P2_DOMAIN'], $title, $content_html);
 
-		// copy the HTML to the clipboard.
-		// TODO: make this work better. Currently, only partial HTML is copied.
-		shell_exec("echo " . escapeshellarg($content_html) . " | pbcopy");
+		exit("\np2 posted by Zapier!\n");
+	}
 
-		exit("\npost copied to clipboard\n");
+	public function zapier_webhook_trigger( $site = 'test site', $title = 't title', $body = 't body' ): void {
+		// ZAPIER_WEBHOOK_URL is set in the .env file.
+		$webhook_url = $_ENV['ZAPIER_WEBHOOK_URL'];
+		$webhook_data = array(
+			'site' => $site,
+			'title' => $title,
+			'body' => $body,
+		);
+
+		// use GuzzleHttp to send the webhook.
+		$client = new Client();
+		$response = $client->request('POST', $webhook_url, [
+			'json' => $webhook_data,
+		]);
+
+		// catch errors.
+		if ($response->getStatusCode() !== 200) {
+			exit("Error: {$response->getStatusCode()} {$response->getReasonPhrase()} {$response->getBody()}");
+		}
+
 	}
 
 	public function create_table($dom, $nr_metrics, $header1 = 'Metric', $header2 = 'Count')
@@ -120,5 +168,27 @@ class PostGenerator
 		$table->appendChild($tbody);
 
 		return $table;
+	}
+
+	public function create_cwv_html( $nr_metrics ){
+		// Load the template file into a DOMDocument.
+		$html = file_get_contents( GUTENBERG_TPL . '/cwv.tpl.html' );
+		$dom = new DOMDocument();
+		$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
+
+		$metric = $nr_metrics[0];
+
+		$m = $metric['percentile.cumulativeLayoutShift'];
+		dom_string_replace( $dom, '{{cls}}', round($m['75'], 2));
+
+		$m = $metric['percentile.firstInputDelay'];
+		dom_string_replace( $dom, '{{fid}}', round($m['75'], 2) . 'ms');
+
+		$m = $metric['percentile.largestContentfulPaint'];
+
+		dom_string_replace( $dom, '{{lcp}}', round($m['75'], 2) . 's');
+
+		return $dom->documentElement;
+
 	}
 }

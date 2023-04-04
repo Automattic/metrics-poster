@@ -17,6 +17,7 @@ class NewRelicGQL
 	public array $metrics;
 	public Client $client;
 	public $results;
+	public $browser_guid;
 
 	// constructor with default values.
 	public function __construct(int $week, int $year, int $clientid, string $metrics)
@@ -25,6 +26,7 @@ class NewRelicGQL
 		$this->date_range = $date_range;
 		$this->clientid = $clientid;
 		$this->metrics = explode(',', $metrics);
+		$this->browser_guid = $_ENV['NEW_RELIC_BROWSER_GUID'];
 
 		$this->client = new Client([
 			'base_uri' => self::NR_GQL_URL,
@@ -46,7 +48,8 @@ class NewRelicGQL
 			'404s' => 'get_top_404s',
 			'500s' => 'get_top_500s',
 			'errors' => 'get_php_errors',
-			'warnings' => 'get_php_warnings'
+			'warnings' => 'get_php_warnings',
+			'cwv' => 'get_browser_web_vitals',
 		];
 
 		foreach ($this->metrics as $metric) {
@@ -222,6 +225,30 @@ class NewRelicGQL
 						results,
 						embeddedChartUrl(chartType: TABLE)
 						staticChartUrl(chartType: TABLE, format: PNG, height: 480, width: 768)
+					}
+				}
+			  }
+		}
+		QUERY;
+
+		$response = $this->client->request('POST', '', [
+			'json' => [
+				'query' => $query,
+			],
+		]);
+
+		$body = $response->getBody()->getContents();
+		return json_decode($body, true);
+	}
+
+	public function get_browser_web_vitals()
+	{
+		$query = <<<QUERY
+		{
+			actor {
+				account(id: $this->clientid) {
+					nrql(query: "SELECT percentile(largestContentfulPaint, 75), percentile(firstInputDelay, 75), percentile(cumulativeLayoutShift, 75) FROM PageViewTiming WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
+						results
 					}
 				}
 			  }

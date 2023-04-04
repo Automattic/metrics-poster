@@ -16,3 +16,11 @@ function get_week_start_end( $week, $year ) {
 	$ret['week_end_month'] = $dto->format('F');
 	return $ret;
 }
+
+function dom_string_replace( &$dom, $match, $new_value ){
+	$xpath = new \DOMXPath($dom);
+	$nodes = $xpath->query("//*[contains(text(), '$match')]");
+	foreach ($nodes as $node) {
+		$node->nodeValue = str_replace($match, $new_value, $node->nodeValue);
+	}
+}
