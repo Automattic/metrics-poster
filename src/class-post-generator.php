@@ -35,17 +35,18 @@ class PostGenerator
 			exit('No metrics found');
 		}
 
-		// Load the template file into a DOMDocument.
-		$html = file_get_contents($this->template_file);
-		$dom = new DOMDocument();
-		$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
-
 		// Create the post title with the week and year.
 		$date_range = get_week_start_end($this->week, $this->year);
 		$fweek_title = sprintf('%s %s-%s, %s', $date_range['week_start_month'], $date_range['week_start_day'], $date_range['week_end_day'], $this->year);
 		$title = "Weekly Metrics: $fweek_title";
+		
+		// Create the main p2 DOMDocument.
+		$dom = new DOMDocument();
 
 		if( $this->show_title ) {
+			// Load the template file into a DOMDocument.
+			$html = file_get_contents($this->template_file);
+			$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
 			$dom->getElementById("p2-title")->nodeValue = $title;
 		}
 

@@ -17,8 +17,17 @@ cd metric-poster
 composer install
 ```
 
-### Create a P2 post
+## Create a P2 post
 
 ```
-php ./script.php --week 12 --metrics 404s,errors,warnings
+php ./script.php --id 123 --week 12 --metrics 404s,errors,warnings
 ```
+
+### Available metrics
+
+**New Relic Metrics**
+- 404s
+- 500s
+- errors
+- warnings
+- cwv

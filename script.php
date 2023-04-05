@@ -27,6 +27,8 @@ if (!isset($args['week'])) {
 
 if (!isset($args['title'])) {
 	$args['title'] = true;
+}else {
+	$args['title'] = false;
 }
 
 // Set year to current year if not set.
