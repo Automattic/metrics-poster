@@ -16,14 +16,12 @@ $dotenv->safeLoad();
 
 // Define global constants.
 define('GUTENBERG_TPL', __DIR__ . '/gutenberg-templates');
+define('DEV_ENV', $_ENV['ENV'] ?? 'dev');
 
 // Get arguments from user.
 $args = getopt('', ['week:', 'clientid:', 'id:', 'metrics:', 'year:', 'title:']);
 
-// Ensure required arguments are present.
-if (!isset($args['week'])) {
-	exit("Missing week value. .i.e script.php --week 51\n");
-}
+$week = $args['week'] ?? get_prev_week_number();
 
 if (!isset($args['title'])) {
 	$args['title'] = true;
@@ -35,7 +33,7 @@ if (!isset($args['title'])) {
 $year = $args['year'] ?? date('Y');
 
 // Determine client ID.
-$client_id = $args['clientid'] ?? $args['id'] ?? $_ENV['NEW_RELIC_ACCOUNT_ID'] ?? null;
+$client_id = $args['clientid'] ?? $args['id'] ?? getenv('NEW_RELIC_ACCOUNT_ID') ?? null;
 
 if (!$client_id) {
 	exit("Missing client ID value. .i.e script.php --week 51 --id 368\n");
@@ -49,6 +47,6 @@ if ($metrics === 'all') {
 }
 
 // Fetch metrics from NewRelic and build metric object for DI.
-$nr_metrics = new NewRelicGQL((int) $args['week'], (int) $year, (int) $client_id, $metrics);
-$pg = new PostGenerator(GUTENBERG_TPL . '/post.tpl.html', (int) $args['week'], (int) $year, (int) $client_id, $nr_metrics, (bool) $args['title']);
+$nr_metrics = new NewRelicGQL((int) $week, (int) $year, (int) $client_id, $metrics);
+$pg = new PostGenerator(GUTENBERG_TPL . '/post.tpl.html', (int) $week, (int) $year, (int) $client_id, $nr_metrics, (bool) $args['title']);
 $pg->create_post();

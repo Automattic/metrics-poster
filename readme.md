@@ -17,10 +17,24 @@ cd metric-poster
 composer install
 ```
 
-## Create a P2 post
+## Create a P2 post (WIP)
 
-```
+> NOTE: Zapier hook is currently disabled, outputs html in terminal to paste to Gutenberg editor.
+
+```sh
+# php
 php ./script.php --id 123 --week 12 --metrics 404s,errors,warnings
+
+# composer
+
+## Gets all metrics (NR) with Title heading for P2.
+composer nr-metrics
+
+## Top errors (NR), no heading.
+composer nr-errors -- --title false
+
+## Swap out suffix as needed.
+composer nr-404s
 ```
 
 ### Available metrics

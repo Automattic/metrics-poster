@@ -33,3 +33,10 @@ function dom_string_replace(DOMDocument &$dom, string $match, mixed $new_value):
 		}
 	}
 }
+
+// get prev week number.
+function get_prev_week_number()
+{
+	$week_number = date('W');
+	return $week_number === 1 ? 52 : $week_number - 1;
+}

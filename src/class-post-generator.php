@@ -97,7 +97,7 @@ class PostGenerator
 		$content_html = $dom->saveHTML();
 		
 		// If is dev, ignore zapier.
-		if ($_ENV['ENV'] === 'dev') {
+		if (DEV_ENV === 'dev') {
 			
 			echo $content_html;
 			
@@ -108,14 +108,14 @@ class PostGenerator
 		}
 		
 		// Send the post to Zapier.
-		$this->zapier_webhook_trigger($_ENV['P2_DOMAIN'], $title, $content_html);
+		$this->zapier_webhook_trigger(getenv('P2_DOMAIN'), $title, $content_html);
 
 		exit("\np2 posted by Zapier!\n");
 	}
 
 	public function zapier_webhook_trigger( $site = 'test site', $title = 't title', $body = 't body' ): void {
 		// ZAPIER_WEBHOOK_URL is set in the .env file.
-		$webhook_url = $_ENV['ZAPIER_WEBHOOK_URL'];
+		$webhook_url = getenv('ZAPIER_WEBHOOK_URL');
 		$webhook_data = array(
 			'site' => $site,
 			'title' => $title,

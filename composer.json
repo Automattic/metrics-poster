@@ -25,5 +25,13 @@
             "name": "Omar Serrano",
             "email": "omar.serrano@automattic.com"
         }
-    ]
+    ],
+    "scripts": {
+        "nr-metrics": "php ./script.php --metrics errors,warnings,404s,500s,cwv",
+        "nr-errors": "php ./script.php --metrics errors",
+        "nr-warnings": "php ./script.php --metrics warnings",
+        "nr-404s": "php ./script.php --metrics 404s",
+        "nr-500s": "php ./script.php --metrics 500s",
+        "nr-cwv": "php ./script.php --metrics cwv"
+    }
 }
