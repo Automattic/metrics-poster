@@ -45,3 +45,10 @@ composer nr-404s
 - errors
 - warnings
 - cwv
+
+## Demo
+<!-- add gif embeds -->
+![](https://github.com/Automattic/metrics-poster/blob/main/nr-metric-fetch.gif)
+
+![](https://github.com/Automattic/metrics-poster/blob/main/nr-output-paste.gif)
+
