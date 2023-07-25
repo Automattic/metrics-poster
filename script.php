@@ -33,7 +33,7 @@ if (!isset($args['title'])) {
 $year = $args['year'] ?? date('Y');
 
 // Determine client ID.
-$client_id = $args['clientid'] ?? $args['id'] ?? getenv('NEW_RELIC_ACCOUNT_ID') ?? null;
+$client_id = $args['clientid'] ?? $args['id'] ?? $_ENV['NEW_RELIC_ACCOUNT_ID'] ?? null;
 
 if (!$client_id) {
 	exit("Missing client ID value. .i.e script.php --week 51 --id 368\n");

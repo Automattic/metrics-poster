@@ -54,7 +54,7 @@ class PostGenerator
 		foreach ($nr_metrics as $metric_key => $metric) {
 			switch ($metric_key) {
 				case 'cwv':
-					$m = $metric['data']['actor']['account']['nrql']['results'];
+					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
 					$cwv_template_html = $this->create_cwv_html($m);
 					$importedNode = $dom->importNode($cwv_template_html, true);
 					
@@ -74,7 +74,7 @@ class PostGenerator
 				case '500s':
 				case 'errors':
 				case 'warnings':
-					$m = $metric['data']['actor']['account']['nrql']['results'];
+					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
 					$table = $this->create_table($dom, $m, "Top {$metric_key}", 'Count');
 
 					// create comment.
@@ -108,14 +108,19 @@ class PostGenerator
 		}
 		
 		// Send the post to Zapier.
-		$this->zapier_webhook_trigger(getenv('P2_DOMAIN'), $title, $content_html);
+		$this->zapier_webhook_trigger($_ENV['P2_DOMAIN'], $title, $content_html);
 
 		exit("\np2 posted by Zapier!\n");
 	}
 
 	public function zapier_webhook_trigger( $site = 'test site', $title = 't title', $body = 't body' ): void {
-		// ZAPIER_WEBHOOK_URL is set in the .env file.
-		$webhook_url = getenv('ZAPIER_WEBHOOK_URL');
+		$webhook_url = $_ENV['ZAPIER_WEBHOOK_URL'] ?? null;
+
+		if (!$webhook_url) {
+			exit('Missing Zapier webhook URL');
+		}
+
+
 		$webhook_data = array(
 			'site' => $site,
 			'title' => $title,
@@ -184,7 +189,7 @@ class PostGenerator
 		$dom = new DOMDocument();
 		$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
 	
-		$metric = $nr_metrics[0];
+		$metric = $nr_metrics[0] ?? [];
 	
 		$this->replaceMetric($dom, $metric, 'CLS', 'cumulativeLayoutShift', 0.1, 0.25, '75', 's');
 	
@@ -196,7 +201,12 @@ class PostGenerator
 	}
 	
 	private function replaceMetric( &$dom, $metric, $metricName, $metricKey, $goodValue, $badValue, $percentile, $unit) {
-		$m = $metric['percentile.' . $metricKey];
+		$m = $metric['percentile.' . $metricKey] ?? [];
+
+		if (empty($m)) {
+			return;
+		}
+
 		$value = round($m[$percentile], 2);
 		$textColor = 'black';
 		$colorClass = 'luminous-vivid-amber';

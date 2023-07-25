@@ -26,12 +26,12 @@ class NewRelicGQL
 		$this->date_range = $date_range;
 		$this->clientid = $clientid;
 		$this->metrics = explode(',', $metrics);
-		$this->browser_guid = getenv('NEW_RELIC_BROWSER_GUID');
+		$this->browser_guid = $_ENV['NEW_RELIC_BROWSER_GUID'];
 
 		$this->client = new Client([
 			'base_uri' => self::NR_GQL_URL,
 			'headers' => [
-				'X-Api-Key' => getenv('NEW_RELIC_API_KEY'),
+				'X-Api-Key' => $_ENV['NEW_RELIC_API_KEY'],
 			],
 		]);
 
