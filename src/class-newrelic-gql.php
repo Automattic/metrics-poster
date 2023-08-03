@@ -22,6 +22,7 @@ class NewRelicGQL
 	private string $show_table_graph_query = '';
 	public string $error_where_clause = "errorType LIKE '%error%' AND errorMessage NOT LIKE '%wp-includes/%' AND errorMessage NOT LIKE '%wp-content/db.php%'";
 	public string $warning_where_clause = "errorType LIKE '%warning%'";
+	private string $nrkey;
 
 	public function __construct($app_info, int $week, int $year, int $clientid, string $metrics, bool $facet_group = false, bool $show_graph_url = false)
 	{
@@ -37,10 +38,17 @@ class NewRelicGQL
 			$this->show_table_graph_query = ', embeddedChartUrl(chartType: TABLE), staticChartUrl(chartType: TABLE, format: PNG, height: 480, width: 768)';
 		}
 
+		
+		if ( defined( 'NEW_RELIC_API_KEY' ) ) {
+			$this->nrkey = constant('NEW_RELIC_API_KEY');
+		} else {
+			throw new InvalidArgumentException( 'New Relic API key not defined' );
+		} 	
+
 		$this->client = new Client([
 			'base_uri' => self::NR_GQL_URL,
 			'headers' => [
-				'X-Api-Key' => $_ENV['NEW_RELIC_API_KEY'],
+				'X-Api-Key' => $this->nrkey,
 			],
 		]);
 	}
