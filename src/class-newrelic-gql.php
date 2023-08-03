@@ -39,14 +39,11 @@ class NewRelicGQL
 		}
 
 		
-		// if ( defined( 'new_relic_api_key' ) ) {
-		// 	$this->nrkey = constant('new_relic_api_key');
-		// } else {
-		// 	throw new InvalidArgumentException( 'New Relic API key not defined' );
-		// } 
-		
-		// get meta key new_relic_api_key
-		$this->nrkey = \get_option('new_relic_api_key') ?? '';
+		if ( \vip_get_env_var( 'NEW_RELIC_API_KEY', '' ) ) {
+			$this->nrkey = \vip_get_env_var( 'NEW_RELIC_API_KEY', '' );
+		} else {
+			throw new InvalidArgumentException( 'New Relic API key not defined' );
+		} 
 
 		// check if key is set
 		if (empty($this->nrkey)) {
