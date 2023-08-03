@@ -39,8 +39,8 @@ class NewRelicGQL
 		}
 
 		
-		if ( defined( 'NEW_RELIC_API_KEY' ) ) {
-			$this->nrkey = constant('NEW_RELIC_API_KEY');
+		if ( defined( 'new_relic_api_key' ) ) {
+			$this->nrkey = constant('new_relic_api_key');
 		} else {
 			throw new InvalidArgumentException( 'New Relic API key not defined' );
 		} 	
