@@ -1,8 +1,9 @@
 {
-    "name": "omar/metric-poster",
-    "description": "Helps to automate weekly type metrics and posts.",
+    "name": "automattic/metric-poster",
+    "description": "Plugin to help automate weekly type metrics and posts.",
     "type": "project",
     "require": {
+        "php": "^8.1",
         "guzzlehttp/guzzle": "^7.0",
         "vlucas/phpdotenv": "^5.5"
     },
@@ -10,9 +11,6 @@
 	"autoload": {
 		"classmap": [
 			"src/"
-		],
-		"files": [
-			"script.php"
 		]
 	},
 	"autoload-dev": {
@@ -25,13 +23,5 @@
             "name": "Omar Serrano",
             "email": "omar.serrano@automattic.com"
         }
-    ],
-    "scripts": {
-        "nr-metrics": "php ./script.php --metrics errors,warnings,404s,500s,cwv",
-        "nr-errors": "php ./script.php --metrics errors",
-        "nr-warnings": "php ./script.php --metrics warnings",
-        "nr-404s": "php ./script.php --metrics 404s",
-        "nr-500s": "php ./script.php --metrics 500s",
-        "nr-cwv": "php ./script.php --metrics cwv"
-    }
+    ]
 }

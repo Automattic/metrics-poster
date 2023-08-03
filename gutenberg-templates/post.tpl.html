@@ -1,3 +1,33 @@
-<!-- wp:paragraph {"className":"p2-editor-autotitle"} -->
-<p id="p2-title" class="p2-editor-autotitle">Weekly Metrics: {{week}}</p>
+<!-- wp:heading {"level":1} -->
+<h1 class="wp-block-heading p2-editor-autotitle">Week {{week}} Metrics for {{app_name}}</h1>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p><strong>Weekly Summary: {{date_range}}</strong></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"anchor":"summary"} -->
+<h2 class="wp-block-heading" id="summary">Summary</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Add content here...</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"anchor":"jetpack-page-views"} -->
+<h2 class="wp-block-heading" id="jetpack-page-views">Jetpack Page Views</h2>
+<!-- /wp:heading -->
+
+<!-- wp:table -->
+<figure class="wp-block-table"><table><thead><tr><th></th><th>Week {{week}}</th></tr></thead><tbody><tr><td>Views</td><td>0</td></tr></tbody></table><figcaption class="wp-element-caption">The period of Jetpack stats is Monday to Sunday</figcaption></figure>
+<!-- /wp:table -->
+
+<p>{{content_body}}</p>
+
+<!-- wp:paragraph -->
+<p>#foundry #weekly-metrics</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>CC: @gilesgina @tedvilla @ldowningidg</p>
 <!-- /wp:paragraph -->

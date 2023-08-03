@@ -18,7 +18,8 @@ class Utils
 		$this->nr_metrics = $nr_metrics;
 	}
 
-	public function zapier_webhook_trigger(): void {
+	public function zapier_webhook_trigger(): void
+	{
 		$webhook_url = $_ENV['ZAPIER_WEBHOOK_URL'] ?? null;
 
 		if (!$webhook_url) {
@@ -31,10 +32,10 @@ class Utils
 			'week' => $this->week,
 		);
 
-		if( !isset($this->nr_metrics) ) {
+		if (!isset($this->nr_metrics)) {
 			exit('No metrics found');
-		}else {
-			if( is_array($this->nr_metrics) ) {
+		} else {
+			if (is_array($this->nr_metrics)) {
 				$webhook_data['data'] = json_encode($this->nr_metrics);
 			}
 		}
@@ -49,8 +50,5 @@ class Utils
 		if ($response->getStatusCode() !== 200) {
 			exit("Error: {$response->getStatusCode()} {$response->getReasonPhrase()} {$response->getBody()}");
 		}
-
 	}
-
-	
 }
