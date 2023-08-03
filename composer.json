@@ -1,7 +1,7 @@
 {
     "name": "automattic/metric-poster",
     "description": "Plugin to help automate weekly type metrics and posts.",
-    "type": "project",
+    "type": "wordpress-plugin",
     "require": {
         "php": "^8.1",
         "guzzlehttp/guzzle": "^7.0",
