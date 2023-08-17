@@ -39,8 +39,8 @@ class NewRelicGQL
 		}
 
 		
-		if ( \vip_get_env_var( 'NEW_RELIC_API_KEY', '' ) ) {
-			$this->nrkey = \vip_get_env_var( 'NEW_RELIC_API_KEY', '' );
+		if ( \vip_get_env_var( 'NEW_RELIC_API_KEY', '' ) || $_ENV['NEW_RELIC_API_KEY'] ) {
+			$this->nrkey = \vip_get_env_var( 'NEW_RELIC_API_KEY', $_ENV['NEW_RELIC_API_KEY'] ?? '' );
 		} else {
 			throw new InvalidArgumentException( 'New Relic API key not defined' );
 		} 
