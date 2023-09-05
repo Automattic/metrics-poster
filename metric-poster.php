@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Metric Poster
  * Plugin URI:
@@ -36,7 +37,188 @@ function metric_poster_settings()
 {
 	\add_menu_page('Metric Poster', 'Metric Poster', 'manage_options', 'metric-poster', __NAMESPACE__ . '\\metric_poster_options', 'dashicons-chart-bar', 6);
 	\add_submenu_page('metric-poster', 'Metric Poster', 'Main', 'manage_options', 'metric-poster', __NAMESPACE__ . '\\metric_poster_options');
+
+	// add edit page and make unlisted.
+	\add_submenu_page(null, 'Metric Poster Edit', 'Edit', 'manage_options', 'metric-poster-edit', __NAMESPACE__ . '\\metric_poster_edit_page');
+
 	\add_submenu_page('metric-poster', 'Metric Poster Settings', 'Settings', 'manage_options', 'metric-poster-app-settings', __NAMESPACE__ . '\\metric_poster_settings_page');
+}
+
+function metric_poster_edit_page()
+{
+	// check user capabilities.
+	if (!\current_user_can('manage_options')) {
+		return;
+	}
+
+	// on load, get options.
+	if (isset($_GET['appid'])) {
+		$metric_poster_options = \get_option('metric_poster_options[apps]', array());
+		$app_id = $_GET['appid'];
+		$app_info = $metric_poster_options[$app_id] ?? [];
+	}
+
+	// on save, update options.
+	if (isset($_POST['metric_poster_options']) && isset($_POST['metric_poster_options']['app_id'])) {
+		$metric_poster_options = \get_option('metric_poster_options[apps]', array());
+
+		$app_id = $_POST['metric_poster_options']['app_id'];
+
+		$metric_poster_options[$app_id] = [];
+
+		$metric_poster_options[$app_id]['app_name'] = $_POST['metric_poster_options']['app_name'];
+		$metric_poster_options[$app_id]['nr_id'] = $_POST['metric_poster_options']['nr_id'];
+		$metric_poster_options[$app_id]['nr_browser_guid'] = $_POST['metric_poster_options']['nr_browser_guid'];
+		$metric_poster_options[$app_id]['nr_app_guid'] = $_POST['metric_poster_options']['nr_app_guid'];
+		$metric_poster_options[$app_id]['app_template_file'] = $_POST['metric_poster_options']['app_template_file'];
+		\update_option('metric_poster_options[apps]', $metric_poster_options);
+	}
+
+	?>
+		<div class="wrap">
+		<h1>Metric Poster Settings</h1>
+		<style>
+			#metric--settings {
+				width: 100%;
+				border-collapse: collapse;
+				margin-bottom: 40px;
+			}
+
+			#metric--settings th,
+			#metric--settings td {
+				border: 1px solid #ccc;
+				padding: 5px;
+			}
+
+			#metric--settings th {
+				text-align: left;
+			}
+
+			#app--entry__container {
+				border-collapse: collapse;
+				margin-bottom: 40px;
+			}
+
+			#app--entry__container td {
+				border: 1px solid #ccc;
+				padding: 5px;
+			}
+
+			#app--entry__container td:first-child {
+				width: 140px;
+			}
+
+			#app--entry__container input {
+				width: 100%;
+			}
+
+			#app--entry__container label {
+				display: inline-block;
+			}
+
+			#app--entry__container label+span {
+				display: inline-block;
+			}
+
+			#app--entry__container input[type="submit"]:hover {
+				cursor: pointer;
+			}
+		</style>
+		<form method="post" action="">
+			<?php
+			\settings_fields('metric_poster_options');
+			\do_settings_sections('metric_poster_options'); ?>
+
+
+			<h2>App Entry</h2>
+			<table id="app--entry__container">
+				<tr>
+					<td>
+						<label for="metric_poster_options[app_id]">App ID</label>
+						<span class="dashicons dashicons-editor-help" title="The App ID is the unique identifier used for WPVIP applications."></span>
+					</td>
+					<td>
+						<input type="text" name="metric_poster_options[app_id]" value="<?php echo $app_id; ?>" readonly>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="metric_poster_options[app_name]">App Name</label>
+						<span class="dashicons dashicons-editor-help" title="This name will be appended at the end of your P2 titles."></span>
+					</td>
+					<td>
+						<input type="text" name="metric_poster_options[app_name]" value="<?php echo $app_info['app_name']; ?>">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="metric_poster_options[nr_id]">NR Account ID</label>
+						<span class="dashicons dashicons-editor-help" title="Copy/paste this value from the NR application's meta modal."></span>
+					</td>
+					<td>
+						<input type="text" name="metric_poster_options[nr_id]" value="<?php echo $app_info['nr_id']; ?>">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="metric_poster_options[nr_browser_guid]">NR Browser GUID</label>
+					</td>
+					<td>
+						<input type="text" name="metric_poster_options[nr_browser_guid]" value="<?php echo $app_info['nr_browser_guid']; ?>">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="metric_poster_options[nr_app_guid]">NR App GUID</label>
+					</td>
+					<td>
+						<input type="text" name="metric_poster_options[nr_app_guid]" value="<?php echo $app_info['nr_app_guid']; ?>">
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<label for="metric_poster_options[app_template_file]">Template</label>
+					</td>
+					<td>
+						<select name="metric_poster_options[app_template_file]">
+							<?php
+							$templates = scandir(GUTENBERG_TPL);
+
+							$tpl_val = $app_info['app_template_file'] ?? '';
+
+							// if empty, echo placeholder option.
+							if ( empty($tpl_val)) {
+								echo '<option value="">Default post.tpl.html</option>';
+							}
+							
+							foreach ($templates as $template) {
+
+								// if file name prefix is not 'post', skip.
+								if (substr($template, 0, 4) !== 'post') {
+									continue;
+								}
+
+								if ($template === '.' || $template === '..') {
+									continue;
+								}
+							?>
+								<option <?php \selected( $tpl_val, $template ); ?> value="<?php echo $template; ?>"><?php echo $template; ?></option>
+							<?php
+							}
+							?>
+						</select>
+					</td>
+				</tr>
+
+			</table>
+
+			<?php
+			\submit_button();
+			?>
+		</form>
+	<?php
+
+
 }
 
 function metric_poster_settings_page()
@@ -54,11 +236,12 @@ function metric_poster_settings_page()
 		$app_id = $_POST['metric_poster_options']['app_id'];
 
 		$metric_poster_options[$app_id] = [];
-		
+
 		$metric_poster_options[$app_id]['app_name'] = $_POST['metric_poster_options']['app_name'];
 		$metric_poster_options[$app_id]['nr_id'] = $_POST['metric_poster_options']['nr_id'];
 		$metric_poster_options[$app_id]['nr_browser_guid'] = $_POST['metric_poster_options']['nr_browser_guid'];
 		$metric_poster_options[$app_id]['nr_app_guid'] = $_POST['metric_poster_options']['nr_app_guid'];
+		$metric_poster_options[$app_id]['app_template_file'] = $_POST['metric_poster_options']['app_template_file'];
 		\update_option('metric_poster_options[apps]', $metric_poster_options);
 	}
 
@@ -68,8 +251,13 @@ function metric_poster_settings_page()
 		unset($metric_poster_options[$_GET['delete']]);
 		\update_option('metric_poster_options[apps]', $metric_poster_options);
 	}
-	
-	?>
+
+	// on edit, redirect to edit page.
+	if (isset($_GET['edit'])) {
+		\wp_redirect(\admin_url('admin.php?page=metric-poster-edit&app_id=' . $_GET['edit']));
+	}
+
+?>
 	<div class="wrap">
 		<h1>Metric Poster Settings</h1>
 		<style>
@@ -111,7 +299,7 @@ function metric_poster_settings_page()
 				display: inline-block;
 			}
 
-			#app--entry__container label + span {
+			#app--entry__container label+span {
 				display: inline-block;
 			}
 
@@ -134,18 +322,19 @@ function metric_poster_settings_page()
 						<th>NR Account ID</th>
 						<th>NR Browser GUID</th>
 						<th>NR App GUID</th>
-						<th>Delete</th>
+						<th>Template</th>
+						<th>Action</th>
 					</tr>
 				</thead>
 				<tbody>
 					<!-- for each item in option, display row -->
 					<?php
 					$metric_poster_options = \get_option('metric_poster_options[apps]');
-					foreach ($metric_poster_options as $key => $value) {
-						?>
+					foreach ($metric_poster_options as $app_id_key => $value) {
+					?>
 						<tr>
 							<td>
-								<?php echo $key; ?>
+								<?php echo $app_id_key; ?>
 							</td>
 							<td>
 								<?php echo $value['app_name']; ?>
@@ -160,7 +349,11 @@ function metric_poster_settings_page()
 								<?php echo $value['nr_app_guid']; ?>
 							</td>
 							<td>
-								<a href="<?php echo \admin_url('admin.php?page=metric-poster-app-settings&delete=' . $key); ?>">Delete</a>
+								<?php echo $value['app_template_file'] ?? ''; ?>
+							</td>
+							<td>
+								<a href="<?php echo \admin_url('admin.php?page=metric-poster-edit&appid=' . $app_id_key); ?>">Edit</a>
+								<a href="<?php echo \admin_url('admin.php?page=metric-poster-app-settings&delete=' . $app_id_key); ?>">Delete</a>
 							</td>
 						</tr>
 					<?php
@@ -214,8 +407,42 @@ function metric_poster_settings_page()
 						<input type="text" name="metric_poster_options[nr_app_guid]">
 					</td>
 				</tr>
+				<tr>
+					<td>
+						<label for="metric_poster_options[app_template_file]">Template</label>
+					</td>
+					<td>
+						<select name="metric_poster_options[app_template_file]">
+							<?php
+							$templates = scandir(GUTENBERG_TPL);
+
+							$tpl_val = $app_info['app_template_file'] ?? '';
+
+							// if empty, echo placeholder option.
+							if ( empty($tpl_val)) {
+								echo '<option value="">Default post.tpl.html</option>';
+							}
+							
+							foreach ($templates as $template) {
+
+								// if file name prefix is not 'post', skip.
+								if (substr($template, 0, 4) !== 'post') {
+									continue;
+								}
+
+								if ($template === '.' || $template === '..') {
+									continue;
+								}
+							?>
+								<option <?php \selected( $tpl_val, $template ); ?> value="<?php echo $template; ?>"><?php echo $template; ?></option>
+							<?php
+							}
+							?>
+						</select>
+					</td>
+				</tr>
 			</table>
-			
+
 			<?php
 			\submit_button();
 			?>
@@ -249,26 +476,26 @@ function metric_poster_options()
 
 		// initialize AppModel
 		$app_info = \get_option('metric_poster_options[apps]')[$app_id];
-		$app_info = new AppModel($app_info['app_name'], $app_id, $app_info['nr_id'], $app_info['nr_browser_guid'], $app_info['nr_app_guid']);
+		$app_info = new AppModel($app_info['app_name'], $app_id, $app_info['nr_id'], $app_info['nr_browser_guid'], $app_info['nr_app_guid'], $app_info['app_template_file']);
 
 		// create comma separated list of metrics from $_POST['metric_poster_options']['metrics'] array.
 		$metrics = [];
 		foreach ($_POST['metric_poster_options']['metrics'] as $metric) {
-			switch($metric){
+			switch ($metric) {
 				case 'errors':
-					$metrics []= 'error_count';
-					$metrics []= 'errors';
+					$metrics[] = 'error_count';
+					$metrics[] = 'errors';
 					break;
 				case 'warnings':
-					$metrics []= 'warning_count';
-					$metrics []= 'warnings';
+					$metrics[] = 'warning_count';
+					$metrics[] = 'warnings';
 					break;
 				case 'cwv':
-					$metrics []= 'cwv';
-					$metrics []= 'cwv_chart';
+					$metrics[] = 'cwv';
+					$metrics[] = 'cwv_chart';
 					break;
 				default:
-					$metrics []= $metric;
+					$metrics[] = $metric;
 			}
 		}
 
@@ -277,17 +504,18 @@ function metric_poster_options()
 		$year = date('Y');
 		$metrics = implode(',', $metrics);
 		$NR_ACCOUNT_ID = $app_info->get_nr_id();
+		$template_file = $app_info->get_template_file();
 
 		// Fetch metrics from NewRelic and build a metric object for DI.
 		$nr_metrics = new NewRelicGQL($app_info, (int) $week, (int) $year, (int) $NR_ACCOUNT_ID, $metrics, (bool) $facet);
 		$metric_results = $nr_metrics->get_results();
-		$pg = new PostGenerator(GUTENBERG_TPL . '/post.tpl.html', (int) $week, (int) $year, $metric_results, (bool) $show_headings, (string) $app_info->get_app_name());
+		$pg = new PostGenerator(GUTENBERG_TPL . '/' . $template_file, (int) $week, (int) $year, $metric_results, (bool) $show_headings, (string) $app_info->get_app_name());
 		$output_post = $pg->create_post();
-}
-	
+	}
 
 
-	?>
+
+?>
 	<div class="wrap">
 		<h2>Metric Poster</h2>
 		<form id="metrics--form" method="post" action="">
@@ -301,16 +529,13 @@ function metric_poster_options()
 				<tr>
 					<th scope="row">Application</th>
 					<td>
-						<select name="metric_poster_options[app_name]">							
-							<!-- <option value="Macworld">Macworld</option>
-							<option value="cio.com">cio.com</option> -->
-							<!-- generate options from $metric_poster_options = \get_option('metric_poster_options[apps]'); -->
+						<select name="metric_poster_options[app_name]">
 							<?php
 							$metric_poster_options = \get_option('metric_poster_options[apps]');
 							// echo placeholder option.
 							echo '<option value="">Select an app</option>';
 							foreach ($metric_poster_options as $key => $value) {
-								?>
+							?>
 								<option value="<?php echo $key; ?>"><?php echo $value['app_name']; ?></option>
 							<?php
 							}
@@ -321,9 +546,9 @@ function metric_poster_options()
 				<tr>
 					<th scope="row">Week</th>
 					<td>
-						<select name="metric_poster_options[week]">							
-							<option value="<?php echo get_prev_week_number();?>"><?php echo get_prev_week_number();?></option>
-							<option value="<?php echo date('W') - 2;?>"><?php echo date('W') - 2;?></option>
+						<select name="metric_poster_options[week]">
+							<option value="<?php echo get_prev_week_number(); ?>"><?php echo get_prev_week_number(); ?></option>
+							<option value="<?php echo date('W') - 2; ?>"><?php echo date('W') - 2; ?></option>
 						</select>
 					</td>
 				</tr>
@@ -331,7 +556,8 @@ function metric_poster_options()
 					input[type="checkbox"] {
 						margin-right: 4px;
 					}
-					input[type="checkbox"] + label {
+
+					input[type="checkbox"]+label {
 						margin-right: 8px;
 					}
 				</style>
@@ -358,10 +584,10 @@ function metric_poster_options()
 					</td>
 				</tr>
 
-				<?php 
+				<?php
 				// if $output_post is set, show the results.
 				if (isset($output_post)) {
-					?>
+				?>
 					<tr>
 						<th scope="row">Output</th>
 						<td>
@@ -383,7 +609,7 @@ function metric_poster_options()
 							});
 						});
 					</script>
-					<?php
+				<?php
 				}
 				?>
 			</table>
@@ -403,15 +629,67 @@ function metric_poster_options()
 				z-index: 9999;
 			}
 
-			#loading_spinner img {
-				position: absolute;
+			.lds-ripple {
+				display: inline-block;
+				position: relative;
+				width: 80px;
+				height: 80px;
 				top: 50%;
 				left: 50%;
 				transform: translate(-50%, -50%);
 			}
+
+			.lds-ripple div {
+				position: absolute;
+				border: 4px solid #fff;
+				opacity: 1;
+				border-radius: 50%;
+				animation: lds-ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+			}
+
+			.lds-ripple div:nth-child(2) {
+				animation-delay: -0.5s;
+			}
+
+			@keyframes lds-ripple {
+				0% {
+					top: 36px;
+					left: 36px;
+					width: 0;
+					height: 0;
+					opacity: 0;
+				}
+
+				4.9% {
+					top: 36px;
+					left: 36px;
+					width: 0;
+					height: 0;
+					opacity: 0;
+				}
+
+				5% {
+					top: 36px;
+					left: 36px;
+					width: 0;
+					height: 0;
+					opacity: 1;
+				}
+
+				100% {
+					top: 0px;
+					left: 0px;
+					width: 72px;
+					height: 72px;
+					opacity: 0;
+				}
+			}
 		</style>
 		<div id="loading_spinner">
-			<img src="<?php echo \admin_url('images/spinner-2x.gif'); ?>" alt="loading spinner">
+			<div class="lds-ripple">
+				<div></div>
+				<div></div>
+			</div>
 		</div>
 
 		<!-- script for loading spinner -->
@@ -429,7 +707,7 @@ function metric_poster_options()
 
 
 	</div>
-<?php	
+<?php
 }
 
 \add_action('admin_init', __NAMESPACE__ . '\\metric_poster_register_settings');
@@ -437,5 +715,3 @@ function metric_poster_register_settings()
 {
 	\register_setting('metric_poster_options', 'metric_results');
 }
-
-

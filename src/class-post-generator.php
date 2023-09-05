@@ -19,7 +19,6 @@ class PostGenerator
 
 	public function __construct(string $file_path, int $week, int $year, $nr_metrics, bool $show_headings, string $app_name = 'test app')
 	{
-		print "In PostGenerator constructor\n";
 		$this->template_file = $file_path;
 		$this->week = $week;
 		$this->year = $year;
