@@ -6,6 +6,7 @@ namespace MetricPoster\UI;
 
 use MetricPoster\NewRelicGQL;
 use MetricPoster\AppModel;
+use MetricPoster\PostGenerator;
 
 class SettingsPage
 {

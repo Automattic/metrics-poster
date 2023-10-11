@@ -13,8 +13,11 @@ class NewRelicGQL
 
 	private string $app_guid;
 	private string $browser_guid;
+	private string $appname;
 	private array $date_range;
 	private int $clientid;
+	private string $appid;
+	private int $week;
 	private array $metrics;
 	private Client $client;
 	private bool $facet_group;
@@ -28,9 +31,12 @@ class NewRelicGQL
 	{
 		$this->date_range = get_week_start_end((int)$week, $year);
 		$this->clientid = $clientid;
+		$this->week = $week;
 		$this->metrics = explode(',', $metrics);
 		$this->browser_guid = $app_info->get_nr_browser_guid();
 		$this->app_guid = $app_info->get_nr_app_guid();
+		$this->appid = $app_info->get_app_id();
+		$this->appname = $app_info->get_app_name();
 		$this->facet_group = $facet_group;
 
 		if ($show_graph_url) {
@@ -213,7 +219,10 @@ class NewRelicGQL
 		}
 		QUERY;
 
-		return $this->nrqlQuery($query);
+		// return $this->nrqlQuery($query);
+		$mpost_id = $this->update_metric_posts('error_count', $this->nrqlQuery($query));
+		// return post object with post meta error_count.
+		return \get_post($mpost_id);
 	}
 
 	// Get PHP warning counts.
@@ -233,7 +242,10 @@ class NewRelicGQL
 		}
 		QUERY;
 
-		return $this->nrqlQuery($query);
+		// return $this->nrqlQuery($query);
+		$mpost_id = $this->update_metric_posts('warning_count', $this->nrqlQuery($query));
+		// return post object with post meta warning_count.
+		return \get_post($mpost_id);
 	}
 
 
@@ -384,5 +396,73 @@ class NewRelicGQL
 		QUERY;
 
 		return $this->nrqlQuery($query);
+	}
+
+	// function to fetch and update cpt metric_posts
+	public function update_metric_posts( $metaname = 'error_count', $query )
+	{
+		// fetch cpt metric_posts by postmeta appid.
+		$args = array( 
+			'post_type' => 'metric_posts',
+			'posts_per_page' => 1,
+			'meta_query' => array(
+				array(
+					'key' => 'appid',
+					'value' => $this->appid,
+					'compare' => '=',
+				),
+			),
+		);
+
+		$posts = \get_posts( $args );
+		$query = $query['data']['actor']['account']['nrql']['results'][0]['count'] ?? [];
+
+		// if no posts, create one.
+		if ( empty( $posts ) ) {
+			$post_id = \wp_insert_post( array(
+				'post_title' => $this->appname,
+				'post_type' => 'metric_posts',
+				'post_status' => 'publish',
+			) );
+
+			// add post meta.
+			\add_post_meta( $post_id, 'appid', $this->appid );
+			\add_post_meta( $post_id, $metaname, serialize([ "{$this->week}" => $query ]) );
+
+		} else {
+
+			// get count post meta.
+			$count = \get_post_meta( $posts[0]->ID, $metaname, true );
+
+			if ( empty( $count ) || ! is_string( $count ) ) {
+				$count = [];
+			} else {
+				// unserialize count.
+				$count = unserialize( $count );				
+			}
+
+			// check if week is already added.
+			if ( isset( $count[ "{$this->week}" ] ) ) {
+				return $posts[0]->ID;
+			}
+
+			// add new week to count.
+			$count[ "{$this->week}" ] = $query;
+
+			// sort count by week.
+			ksort( $count );
+
+			// serialize count.
+			$count = serialize( $count );
+
+			// update post meta.
+			\update_post_meta( $posts[0]->ID, $metaname, $count );
+
+			$post_id = $posts[0]->ID;
+		}
+
+		// return post id.
+		return $post_id;
+
 	}
 }

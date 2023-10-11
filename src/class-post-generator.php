@@ -113,7 +113,7 @@ class PostGenerator
 					break;
 				case 'error_count':
 				case 'warning_count':
-					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
+					// $m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
 
 					$metric_names = [
 						'error_count' => 'Errors',
@@ -125,7 +125,16 @@ class PostGenerator
 
 					$this->create_p2_headings($content_dom, 'h2', $heading_text);
 
-					$table = $this->create_table($content_dom, $m, "", "Week {$this->week}", $metric_names[$metric_key]);
+					// get postmeta with meta_key $metric_names[$metric_key]
+					$metric_meta_value = \get_post_meta( $metric->ID, "{$metric_key}", true );
+					
+					// unserialize $metric_meta_value.
+					$metric_array = unserialize($metric_meta_value) ?? [];
+
+					// create create_html_table.
+					$table = $this->create_html_table($content_dom, $metric_array, 'Errors');
+
+					// $table = $this->create_table($content_dom, $m, "", "Week {$this->week}", $metric_names[$metric_key]);
 
 					$caption = $content_dom->createElement('figcaption', $caption_text);
 					$caption->setAttribute('class', 'wp-element-caption');
@@ -227,6 +236,75 @@ class PostGenerator
 		return $dom;
 	}
 
+	// function to create a table from an array.
+	public function create_html_table(&$dom, $metric_arr, $metric_name = 'Errors' ) {
+		$table = $dom->createElement('table');
+		$thead = $dom->createElement('thead');
+		$tbody = $dom->createElement('tbody');
+
+		// Create header row.
+		$tr = $dom->createElement('tr');
+
+		// empty header cell.
+		$th = $dom->createElement('th', '');
+		$tr->appendChild($th);
+
+		// for each column in $metric_arr[0], create a header column in the table.
+		foreach ($metric_arr as $week => $value) {
+			$th = $dom->createElement('th', "Week {$week}");
+			$tr->appendChild($th);
+		}
+
+		$thead->appendChild($tr);
+		$table->appendChild($thead);
+
+		// for each row in $metric_arr, create a row in the table.
+		$tr = $dom->createElement('tr');
+
+		// header cell.
+		$td = $dom->createElement('td', $metric_name);
+		$tr->appendChild($td);
+		foreach ($metric_arr as $weekval ) {
+
+			$td = $dom->createElement('td', "{$weekval}");
+			$tr->appendChild($td);
+
+			$tbody->appendChild($tr);
+		}
+
+		$tr = $dom->createElement('tr');
+		$td = $dom->createElement('td', 'Change');
+		$tr->appendChild($td);
+
+		foreach ($metric_arr as $key => $val) {
+
+			// get previous item in array.
+			$previous_column = getPrevKey($key, $metric_arr);
+			$previous_column = $metric_arr[$previous_column] ?? null;
+			
+			// check if previous $column exists.
+			if ($previous_column) {
+				$change = round((($val - $previous_column) / $previous_column) * 100, 2);
+				$td = $dom->createElement('td', "{$change}%");
+
+			} else {
+				$td = $dom->createElement('td', "0%");
+			}
+
+			$tr->appendChild($td);
+		}
+
+		$tbody->appendChild($tr);
+
+		$table->appendChild($tbody);
+
+		// Create figure element and append the table.
+		$figure = $dom->createElement('figure');
+		$figure->setAttribute('class', 'wp-block-table');
+		$figure->appendChild($table);
+
+		return $figure;
+	}
 
 	public function create_table(&$dom, $nr_metrics, $header1 = 'Metric', $header2 = 'Count', $transaction_type = 'facet')
 	{

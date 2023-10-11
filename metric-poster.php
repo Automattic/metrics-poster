@@ -30,8 +30,25 @@ $dotenv->safeLoad();
 define('GUTENBERG_TPL', __DIR__ . '/gutenberg-templates');
 define('DEV_ENV', $_ENV['ENV'] ?? 'dev');
 
+
 // init hook.
 \add_action('init', function () {
+	\register_post_type('metric_posts', [
+		'labels' => [
+			'name' => __('Metric Posts'),
+			'singular_name' => __('Metric Post'),
+			'menu_name' => __('Metric Post'),
+		],
+		'public' => true,
+		'show_in_menu' => true,
+		'show_ui' => true,
+		'menu_position' => 5,
+		'has_archive' => true, 
+		'show_in_rest' => true,
+		'rewrite' => ['slug' => 'metric_posts'],
+		'supports' => ['title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'custom-fields', 'revisions', 'page-attributes', 'post-formats'],
+	]);
+
 	$s = new SettingsPage();
 	$s->run();
 });
