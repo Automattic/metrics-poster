@@ -12,15 +12,17 @@ class AppModel
 	private $nr_id;
 	private $nr_browser_guid;
 	private $nr_app_guid;
+	private $jp_blogid;
 	private $template_file;
 	
-	public function __construct($app_name, $app_id, $nr_id, $nr_browser_guid, $nr_app_guid, $template_file)
+	public function __construct($app_name, $app_id, $nr_id, $nr_browser_guid, $nr_app_guid, $jp_blogid, $template_file)
 	{
 		$this->app_name = $app_name;
 		$this->app_id = $app_id;
 		$this->nr_id = $nr_id;
 		$this->nr_browser_guid = $nr_browser_guid;
 		$this->nr_app_guid = $nr_app_guid;
+		$this->jp_blogid = $jp_blogid;
 		$this->template_file = empty($template_file) ? 'post.tpl.html' : $template_file;
 	}
 
@@ -72,6 +74,16 @@ class AppModel
 	public function set_nr_app_guid(string $nr_app_guid): void
 	{
 		$this->nr_app_guid = $nr_app_guid;
+	}
+
+	public function get_jp_blogid(): string
+	{
+		return $this->jp_blogid;
+	}
+
+	public function set_jp_blogid(string $jp_blogid): void
+	{
+		$this->jp_blogid = $jp_blogid;
 	}
 
 	public function get_template_file(): string

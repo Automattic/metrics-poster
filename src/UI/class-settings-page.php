@@ -173,6 +173,14 @@ class SettingsPage
                 </tr>
                 <tr>
                     <td>
+                        <label for="metric_poster_options[jp_blogid]">JP Blog ID</label>
+                    </td>
+                    <td>
+                        <input type="text" name="metric_poster_options[jp_blogid]" value="<?php echo $app_info['jp_blogid'] ?? ''; ?>">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
                         <label for="metric_poster_options[app_template_file]">Template</label>
                     </td>
                     <td>
@@ -231,6 +239,7 @@ class SettingsPage
             $metric_poster_options[$app_id]['nr_id'] = $_POST['metric_poster_options']['nr_id'];
             $metric_poster_options[$app_id]['nr_browser_guid'] = $_POST['metric_poster_options']['nr_browser_guid'];
             $metric_poster_options[$app_id]['nr_app_guid'] = $_POST['metric_poster_options']['nr_app_guid'];
+            $metric_poster_options[$app_id]['jp_blogid'] = $_POST['metric_poster_options']['jp_blogid'];
             $metric_poster_options[$app_id]['app_template_file'] = $_POST['metric_poster_options']['app_template_file'];
             \update_option('metric_poster_options[apps]', $metric_poster_options);
         }
@@ -318,6 +327,7 @@ class SettingsPage
                                 <th>NR Account ID</th>
                                 <th>NR Browser GUID</th>
                                 <th>NR App GUID</th>
+                                <th>JP Blog Id</th>
                                 <th>Template</th>
                                 <th>Action</th>
                             </tr>
@@ -343,6 +353,9 @@ class SettingsPage
                                     </td>
                                     <td>
                                         <?php echo $value['nr_app_guid']; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo $value['jp_blogid'] ?? ''; ?>
                                     </td>
                                     <td>
                                         <?php echo $value['app_template_file'] ?? ''; ?>
@@ -394,12 +407,15 @@ class SettingsPage
 
             // initialize AppModel
             $app_info = \get_option('metric_poster_options[apps]')[$app_id];
-            $app_info = new AppModel($app_info['app_name'], $app_id, $app_info['nr_id'], $app_info['nr_browser_guid'], $app_info['nr_app_guid'], $app_info['app_template_file']);
+            $app_info = new AppModel($app_info['app_name'], $app_id, $app_info['nr_id'], $app_info['nr_browser_guid'], $app_info['nr_app_guid'], $app_info['jp_blogid'], $app_info['app_template_file']);
 
             // create comma separated list of metrics from $_POST['metric_poster_options']['metrics'] array.
             $metrics = [];
             foreach ($_POST['metric_poster_options']['metrics'] as $metric) {
                 switch ($metric) {
+                    case 'jetpack_pageviews':
+                        $metrics[] = 'jetpack_pageviews';
+                        break;
                     case 'errors':
                         $metrics[] = 'error_count';
                         $metrics[] = 'errors';
@@ -482,6 +498,9 @@ class SettingsPage
                         <tr>
                             <th scope="row">Metrics</th>
                             <td>
+                                <input type="checkbox" name="metric_poster_options[metrics][]" value="jetpack_pageviews" <?php \checked(1, false, false); ?> />
+                                <label for="metric_poster_options[metrics][]">JP Page Views</label>
+
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="errors" <?php \checked(1, true, true); ?> />
                                 <label for="metric_poster_options[metrics][]">PHP Errors</label>
 

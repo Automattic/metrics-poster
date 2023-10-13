@@ -13,6 +13,7 @@ function get_week_start_end($week, $year)
 	$dto->modify('+6 days');
 	$ret['week_end'] = $dto->format('m-d-Y');
 	$ret['week_end_system'] = $dto->format('Y-m-d 23:59:59');
+	$ret['jp_week_end'] = $dto->format('Y-m-d');
 	$ret['week_end_day'] = $dto->format('d');
 	$ret['week_end_month'] = $dto->format('F');
 	return $ret;
@@ -47,4 +48,25 @@ function getPrevKey($key, $hash = array()) {
     if ($found_index === false || $found_index === 0)
         return false;
     return $keys[$found_index-1];
+}
+
+function number_format_short( $number, $precision = 1 ){
+	$precision = $precision ?? 1;
+	if ($number < 1000) {
+		// Anything less than a million
+		$number_format_short = number_format($number);
+	} else if ($number < 1000000) {
+		// Anything less than a billion
+		$number_format_short = number_format($number / 1000, $precision) . 'K';
+	} else if ($number < 1000000000) {
+		// Anything less than a trillion
+		$number_format_short = number_format($number / 1000000, $precision) . 'M';
+	} else if ($number < 1000000000000) {
+		// Anything less than a trillion
+		$number_format_short = number_format($number / 1000000000, $precision) . 'B';
+	} else {
+		// At least a trillion
+		$number_format_short = number_format($number / 1000000000000, $precision) . 'T';
+	}
+	return $number_format_short;
 }

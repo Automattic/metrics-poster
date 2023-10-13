@@ -93,6 +93,8 @@ class ComposerStaticInit73341bd9c6ec56142cfcb7ee9101ffd0
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'MetricPoster\\AppModel' => __DIR__ . '/../..' . '/src/class-app-model.php',
+        'MetricPoster\\DB' => __DIR__ . '/../..' . '/src/class-db.php',
+        'MetricPoster\\Jetpack_Metrics' => __DIR__ . '/../..' . '/src/class.jetpack-metrics.php',
         'MetricPoster\\MetricFetcher' => __DIR__ . '/../..' . '/src/class-metric-fetcher.php',
         'MetricPoster\\NewRelicGQL' => __DIR__ . '/../..' . '/src/class-newrelic-gql.php',
         'MetricPoster\\PostGenerator' => __DIR__ . '/../..' . '/src/class-post-generator.php',
