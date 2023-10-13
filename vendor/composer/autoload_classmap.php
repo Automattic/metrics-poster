@@ -9,6 +9,8 @@ return array(
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'MetricPoster\\AppModel' => $baseDir . '/src/class-app-model.php',
+    'MetricPoster\\DB' => $baseDir . '/src/class-db.php',
+    'MetricPoster\\Jetpack_Metrics' => $baseDir . '/src/class.jetpack-metrics.php',
     'MetricPoster\\MetricFetcher' => $baseDir . '/src/class-metric-fetcher.php',
     'MetricPoster\\NewRelicGQL' => $baseDir . '/src/class-newrelic-gql.php',
     'MetricPoster\\PostGenerator' => $baseDir . '/src/class-post-generator.php',

@@ -113,26 +113,28 @@ class PostGenerator
 					break;
 				case 'error_count':
 				case 'warning_count':
+				case 'jetpack_pageviews':
 					// $m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
 
 					$metric_names = [
-						'error_count' => 'Errors',
-						'warning_count' => 'Warnings'
+						'error_count' => 'PHP Errors',
+						'warning_count' => 'PHP Warnings',
+						'jetpack_pageviews' => 'Jetpack Page Views'
 					];
 
 					$caption_text = "The period of weekly metrics collection is Sunday to Saturday";
-					$heading_text = "PHP {$metric_names[$metric_key]}";
+					$heading_text = "{$metric_names[$metric_key]}";
 
 					$this->create_p2_headings($content_dom, 'h2', $heading_text);
 
 					// get postmeta with meta_key $metric_names[$metric_key]
-					$metric_meta_value = \get_post_meta( $metric->ID, "{$metric_key}", true );
+					$metric_meta_value = \get_post_meta( $metric->ID, $metric_key, true );
 					
 					// unserialize $metric_meta_value.
 					$metric_array = unserialize($metric_meta_value) ?? [];
 
 					// create create_html_table.
-					$table = $this->create_html_table($content_dom, $metric_array, 'Errors');
+					$table = $this->create_html_table($content_dom, $metric_array, "{$metric_names[$metric_key]}");
 
 					// $table = $this->create_table($content_dom, $m, "", "Week {$this->week}", $metric_names[$metric_key]);
 

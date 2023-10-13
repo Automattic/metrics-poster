@@ -6,6 +6,7 @@ namespace MetricPoster;
 
 use GuzzleHttp\Client;
 use InvalidArgumentException;
+use MetricPoster\Jetpack_Metrics;
 
 class NewRelicGQL
 {
@@ -14,6 +15,7 @@ class NewRelicGQL
 	private string $app_guid;
 	private string $browser_guid;
 	private string $appname;
+	private string $jp_blogid;
 	private array $date_range;
 	private int $clientid;
 	private string $appid;
@@ -23,7 +25,7 @@ class NewRelicGQL
 	private bool $facet_group;
 	private string $show_graph_query = '';
 	private string $show_table_graph_query = '';
-	public string $error_where_clause = "errorType LIKE '%error%' AND errorMessage NOT LIKE '%wp-includes/%' AND errorMessage NOT LIKE '%wp-content/db.php%'";
+	public string $error_where_clause = "errorType LIKE '%error%' AND errorMessage NOT LIKE '%wp-includes/%' AND errorMessage NOT LIKE '%wp-content/db.php%' AND errorMessage NOT LIKE '%Call to undefined function%'";
 	public string $warning_where_clause = "errorType LIKE '%warning%'";
 	private string $nrkey;
 
@@ -37,6 +39,7 @@ class NewRelicGQL
 		$this->app_guid = $app_info->get_nr_app_guid();
 		$this->appid = $app_info->get_app_id();
 		$this->appname = $app_info->get_app_name();
+		$this->jp_blogid = $app_info->get_jp_blogid();
 		$this->facet_group = $facet_group;
 
 		if ($show_graph_url) {
@@ -77,6 +80,7 @@ class NewRelicGQL
 			'warning_count' => 'get_warning_count',
 			'cwv' => 'get_browser_web_vitals',
 			'cwv_chart' => 'get_cwv_by_pageview_chart',
+			'jetpack_pageviews' => 'get_jetpack_pageviews',
 			'transactions' => 'get_top_slow_transactions',
 		];
 
@@ -220,7 +224,7 @@ class NewRelicGQL
 		QUERY;
 
 		// return $this->nrqlQuery($query);
-		$mpost_id = $this->update_metric_posts('error_count', $this->nrqlQuery($query));
+		$mpost_id = $this->update_metric_posts('error_count', $query);
 		// return post object with post meta error_count.
 		return \get_post($mpost_id);
 	}
@@ -243,7 +247,7 @@ class NewRelicGQL
 		QUERY;
 
 		// return $this->nrqlQuery($query);
-		$mpost_id = $this->update_metric_posts('warning_count', $this->nrqlQuery($query));
+		$mpost_id = $this->update_metric_posts('warning_count', $query);
 		// return post object with post meta warning_count.
 		return \get_post($mpost_id);
 	}
@@ -415,7 +419,6 @@ class NewRelicGQL
 		);
 
 		$posts = \get_posts( $args );
-		$query = $query['data']['actor']['account']['nrql']['results'][0]['count'] ?? [];
 
 		// if no posts, create one.
 		if ( empty( $posts ) ) {
@@ -424,10 +427,14 @@ class NewRelicGQL
 				'post_type' => 'metric_posts',
 				'post_status' => 'publish',
 			) );
+			
+			// run query.
+			$query_results = $this->nrqlQuery( $query );
+			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? [];
 
 			// add post meta.
 			\add_post_meta( $post_id, 'appid', $this->appid );
-			\add_post_meta( $post_id, $metaname, serialize([ "{$this->week}" => $query ]) );
+			\add_post_meta( $post_id, $metaname, serialize([ "{$this->week}" => $query_results ]) );
 
 		} else {
 
@@ -443,14 +450,23 @@ class NewRelicGQL
 
 			// check if week is already added.
 			if ( isset( $count[ "{$this->week}" ] ) ) {
-				return $posts[0]->ID;
+				return \get_post($posts[0]->ID);
 			}
 
+			// run query.
+			$query_results = $this->nrqlQuery( $query );
+			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? [];
+
 			// add new week to count.
-			$count[ "{$this->week}" ] = $query;
+			$count[ "{$this->week}" ] = $query_results;
 
 			// sort count by week.
 			ksort( $count );
+
+			// trim array to last 6 weeks.
+			if ( count( $count ) > 6 ) {
+				$count = array_slice( $count, -6, 6, true );
+			}
 
 			// serialize count.
 			$count = serialize( $count );
@@ -463,6 +479,85 @@ class NewRelicGQL
 
 		// return post id.
 		return $post_id;
+
+	}
+
+	public function get_jetpack_pageviews(){
+		// Jetpack_Metrics class instance
+		$jp = new Jetpack_Metrics($this->jp_blogid);
+
+		// fetch cpt metric_posts by postmeta appid.
+		$args = array( 
+			'post_type' => 'metric_posts',
+			'posts_per_page' => 1,
+			'meta_query' => array(
+				array(
+					'key' => 'appid',
+					'value' => $this->appid,
+					'compare' => '=',
+				),
+			),
+		);
+
+		$posts = \get_posts( $args );
+
+		// if no posts, create one.
+		if ( empty( $posts ) ) {
+			$post_id = \wp_insert_post( array(
+				'post_title' => $this->appname,
+				'post_type' => 'metric_posts',
+				'post_status' => 'publish',
+			) );
+			
+			// get stats from jetpack
+			$query_results = $jp->get_stats(7, $this->date_range["jp_week_end"]);
+
+			// add post meta.
+			\add_post_meta( $post_id, 'appid', $this->appid );
+			\add_post_meta( $post_id, 'jetpack_pageviews', serialize([ "{$this->week}" => $query_results ]) );
+
+		} else {
+
+			// get count post meta.
+			$count = \get_post_meta( $posts[0]->ID, 'jetpack_pageviews', true );
+
+			if ( empty( $count ) || ! is_string( $count ) ) {
+				$count = [];
+			} else {
+				// unserialize count.
+				$count = unserialize( $count );				
+			}
+
+			// check if week is already added.
+			if ( isset( $count[ "{$this->week}" ] ) ) {
+				return \get_post($posts[0]->ID);
+			}
+
+			// run query.
+			$query_results = $jp->get_stats(7, $this->date_range["jp_week_end"]);
+
+			// add new week to count.
+			$count[ "{$this->week}" ] = $query_results;
+
+			// sort count by week.
+			ksort( $count );
+
+			// trim array to last 6 weeks.
+			if ( count( $count ) > 6 ) {
+				$count = array_slice( $count, -6, 6, true );
+			}
+
+			// serialize count.
+			$count = serialize( $count );
+
+			// update post meta.
+			\update_post_meta( $posts[0]->ID, 'jetpack_pageviews', $count );
+
+			$post_id = $posts[0]->ID;
+		}
+
+		// return stats
+		return \get_post($post_id);
 
 	}
 }
