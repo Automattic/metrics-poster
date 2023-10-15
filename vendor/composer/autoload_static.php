@@ -99,6 +99,7 @@ class ComposerStaticInit73341bd9c6ec56142cfcb7ee9101ffd0
         'MetricPoster\\NewRelicGQL' => __DIR__ . '/../..' . '/src/class-newrelic-gql.php',
         'MetricPoster\\PostGenerator' => __DIR__ . '/../..' . '/src/class-post-generator.php',
         'MetricPoster\\UI\\SettingsPage' => __DIR__ . '/../..' . '/src/UI/class-settings-page.php',
+        'MetricPoster\\UI\\SettingsTable' => __DIR__ . '/../..' . '/src/class-settings-table.php',
         'MetricPoster\\Utils' => __DIR__ . '/../..' . '/src/class-utils.php',
         'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
