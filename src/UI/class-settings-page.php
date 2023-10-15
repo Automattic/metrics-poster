@@ -7,6 +7,7 @@ namespace MetricPoster\UI;
 use MetricPoster\NewRelicGQL;
 use MetricPoster\AppModel;
 use MetricPoster\PostGenerator;
+use MetricPoster\UI\SettingsTable;
 
 class SettingsPage
 {
@@ -266,21 +267,6 @@ class SettingsPage
             <div class="wrap">
                 <h1>Metric Poster Settings</h1>
                 <style>
-                    #metric--settings {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 40px;
-                    }
-
-                    #metric--settings th,
-                    #metric--settings td {
-                        border: 1px solid #ccc;
-                        padding: 5px;
-                    }
-
-                    #metric--settings th {
-                        text-align: left;
-                    }
 
                     #app--entry__container {
                         border-collapse: collapse;
@@ -312,64 +298,18 @@ class SettingsPage
                         cursor: pointer;
                     }
                 </style>
+
+                <?php
+                $wp_list_table = new SettingsTable();
+                $wp_list_table->prepare_items();
+                $wp_list_table->display();
+                ?>
+
+
                 <form method="post" action="">
                     <?php
                     \settings_fields('metric_poster_options');
                     \do_settings_sections('metric_poster_options'); ?>
-
-                    <h2>Apps</h2>
-
-                    <table id="metric--settings">
-                        <thead>
-                            <tr>
-                                <th>App ID</th>
-                                <th>App Name</th>
-                                <th>NR Account ID</th>
-                                <th>NR Browser GUID</th>
-                                <th>NR App GUID</th>
-                                <th>JP Blog Id</th>
-                                <th>Template</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- for each item in option, display row -->
-                            <?php
-                            $metric_poster_options = \get_option('metric_poster_options[apps]');
-                            foreach ($metric_poster_options as $app_id_key => $value) {
-                            ?>
-                                <tr>
-                                    <td>
-                                        <?php echo $app_id_key; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo $value['app_name']; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo $value['nr_id']; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo $value['nr_browser_guid']; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo $value['nr_app_guid']; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo $value['jp_blogid'] ?? ''; ?>
-                                    </td>
-                                    <td>
-                                        <?php echo $value['app_template_file'] ?? ''; ?>
-                                    </td>
-                                    <td>
-                                        <a href="<?php echo \admin_url('admin.php?page=metric-poster-edit&appid=' . $app_id_key); ?>">Edit</a>
-                                        <a href="<?php echo \admin_url('admin.php?page=metric-poster-app-settings&delete=' . $app_id_key); ?>">Delete</a>
-                                    </td>
-                                </tr>
-                            <?php
-                            }
-                            ?>
-                        </tbody>
-                    </table>
 
                     <h2>App Entry</h2>
                     <?php
@@ -414,7 +354,14 @@ class SettingsPage
             foreach ($_POST['metric_poster_options']['metrics'] as $metric) {
                 switch ($metric) {
                     case 'jetpack_pageviews':
+
+                        // if $app_info['jp_blogid'] is not set, skip.
+                        if (empty($app_info->get_jp_blogid())) {
+                            continue;
+                        }
+
                         $metrics[] = 'jetpack_pageviews';
+
                         break;
                     case 'errors':
                         $metrics[] = 'error_count';

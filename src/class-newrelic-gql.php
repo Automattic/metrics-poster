@@ -402,6 +402,7 @@ class NewRelicGQL
 		return $this->nrqlQuery($query);
 	}
 
+	// TODO: refactor and combine with get_jetpack_pageviews.
 	// function to fetch and update cpt metric_posts
 	public function update_metric_posts( $metaname = 'error_count', $query )
 	{

@@ -195,7 +195,7 @@ class PostGenerator
 		$content_dom = $content_dom->getElementsByTagName('body')->item(0);
 		$content_body = $dom->importNode($content_dom, true);
 
-		// find and replace string {{content_body}} in $dom with $content_html.
+		// find and replace string {{content_body}} in &$dom with $content_html.
 		$this->replace_content_body($dom, $content_body);
 		
 		// Save the DOMDocument as HTML.
@@ -207,21 +207,15 @@ class PostGenerator
 		$final_html_markup = str_replace('--></p>', '-->', $final_html_markup);
 		$final_html_markup = preg_replace('/<p[^>]*>([\s]|&nbsp;)*<\/p>/', '', $final_html_markup);
 
-		// If is dev, ignore zapier.
-		if (DEV_ENV === 'dev') {
-			return $final_html_markup;
-
-			// Copy the HTML to the clipboard.
-			// TODO: make this work better. Currently, only partial HTML is copied.
-			// shell_exec("echo " . escapeshellarg($final_html_markup) . " | pbcopy");
-			// exit("\npost copied to clipboard\n");
+		// if ZAPIER env is set, send the post to Zapier.
+		if (isset($_ENV['ZAPIER'])) {
+			$title = "Week {$this->week} Metrics for {$this->app_name}: $fweek_title";
+			zapier_webhook_trigger($_ENV['P2_DOMAIN'], $title, $final_html_markup);
+			exit("\np2 posted by Zapier!\n");
 		}
 
-		// Send the post to Zapier.
-		$title = "Week {$this->week} Metrics for {$this->app_name}: $fweek_title";
-		// zapier_webhook_trigger($_ENV['P2_DOMAIN'], $title, $final_html_markup);
+		return $final_html_markup;
 
-		exit("\np2 posted by Zapier!\n");
 	}
 
 	public function replace_content_body(&$dom, $content_html)
@@ -235,7 +229,6 @@ class PostGenerator
 			$node->parentNode->replaceChild($content_html, $node);
 		}
 
-		return $dom;
 	}
 
 	// function to create a table from an array.

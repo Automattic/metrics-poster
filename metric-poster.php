@@ -35,13 +35,11 @@ define('DEV_ENV', $_ENV['ENV'] ?? 'dev');
 \add_action('init', function () {
 	\register_post_type('metric_posts', [
 		'labels' => [
-			'name' => __('Metric Posts'),
-			'singular_name' => __('Metric Post'),
-			'menu_name' => __('Metric Post'),
+			'name' => __('Metric Post Objects'),
+			'singular_name' => __('Metric Post Object'),
+			'menu_name' => __('Metric Post Objects (debugging only)'),
 		],
 		'public' => true,
-		'show_in_menu' => true,
-		'show_ui' => true,
 		'menu_position' => 5,
 		'has_archive' => true, 
 		'show_in_rest' => true,

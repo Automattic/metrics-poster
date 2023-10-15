@@ -15,6 +15,7 @@ return array(
     'MetricPoster\\NewRelicGQL' => $baseDir . '/src/class-newrelic-gql.php',
     'MetricPoster\\PostGenerator' => $baseDir . '/src/class-post-generator.php',
     'MetricPoster\\UI\\SettingsPage' => $baseDir . '/src/UI/class-settings-page.php',
+    'MetricPoster\\UI\\SettingsTable' => $baseDir . '/src/class-settings-table.php',
     'MetricPoster\\Utils' => $baseDir . '/src/class-utils.php',
     'PhpToken' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
     'Stringable' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
