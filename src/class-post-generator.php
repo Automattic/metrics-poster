@@ -133,6 +133,9 @@ class PostGenerator
 					// unserialize $metric_meta_value.
 					$metric_array = unserialize($metric_meta_value) ?? [];
 
+					// TODO: try to remove elements after key $this->week.
+
+
 					// create create_html_table.
 					$table = $this->create_html_table($content_dom, $metric_array, "{$metric_names[$metric_key]}");
 
