@@ -431,7 +431,7 @@ class NewRelicGQL
 			
 			// run query.
 			$query_results = $this->nrqlQuery( $query );
-			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? [];
+			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? 0;
 
 			// add post meta.
 			\add_post_meta( $post_id, 'appid', $this->appid );
@@ -449,6 +449,13 @@ class NewRelicGQL
 				$count = unserialize( $count );				
 			}
 
+			// $pid = 109;
+			// $count = get_post_meta( $pid, 'error_count', true );
+			// $count = unserialize( $count );
+			// ksort( $count );
+			// $count = serialize( $count );
+			// update_post_meta( $pid, 'error_count', $count );
+
 			// check if week is already added.
 			if ( isset( $count[ "{$this->week}" ] ) ) {
 				return \get_post($posts[0]->ID);
@@ -456,7 +463,7 @@ class NewRelicGQL
 
 			// run query.
 			$query_results = $this->nrqlQuery( $query );
-			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? [];
+			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? 0;
 
 			// add new week to count.
 			$count[ "{$this->week}" ] = $query_results;

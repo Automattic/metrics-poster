@@ -133,6 +133,8 @@ class PostGenerator
 					// unserialize $metric_meta_value.
 					$metric_array = unserialize($metric_meta_value) ?? [];
 
+					ksort($metric_array);
+
 					// TODO: try to remove elements after key $this->week.
 
 
