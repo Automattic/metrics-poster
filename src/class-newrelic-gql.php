@@ -67,6 +67,11 @@ class NewRelicGQL
 		]);
 	}
 
+	public function set_client(Client $client): void
+	{
+		$this->client = $client;
+	}
+
 	public function get_results(): array
 	{
 		$results = [];

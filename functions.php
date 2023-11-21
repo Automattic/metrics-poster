@@ -68,5 +68,15 @@ function number_format_short( $number, $precision = 1 ){
 		// At least a trillion
 		$number_format_short = number_format($number / 1000000000000, $precision) . 'T';
 	}
+
 	return $number_format_short;
+}
+
+function get_correct_year( $week = null, $year = null ){
+	$week = $week ?? get_prev_week_number();
+	$year = $year ?? date('Y');
+	if ($week === 52) {
+		$year = $year - 1;
+	}
+	return $year;
 }
