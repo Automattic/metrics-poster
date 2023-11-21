@@ -18,6 +18,7 @@ if (!defined('ABSPATH')) {
 
 use Dotenv\Dotenv;
 use MetricPoster\UI\SettingsPage;
+use MetricPoster\CronSetup;
 
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/vendor/autoload.php';
@@ -49,4 +50,7 @@ define('DEV_ENV', $_ENV['ENV'] ?? 'dev');
 
 	$s = new SettingsPage();
 	$s->run();
+
+	$cron = new CronSetup();
+	$cron->run();
 });
