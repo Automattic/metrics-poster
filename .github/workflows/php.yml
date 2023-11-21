@@ -30,7 +30,9 @@ jobs:
           ${{ runner.os }}-php-
 
     - name: Build and zip
-      run: composer install --prefer-dist --no-progress --no-dev --no-interaction --no-scripts --optimize-autoloader && zip -r asset.zip . -x '*.git*' -x '*.github*' -x '*tests*' -x '*phpunit*' -x '*.vscode*' -x '*phpcs*' -x '*phpstan*' -x '*phpmd*' -x '*php-cs-fixer*' -x '*Makefile' -x '*phpunit.xml*' -x '*phpstan.neon*' -x '*phpmd.xml*' -x '*php-cs-fixer.*' -x '*phpcs.xml*' -x '*phpunit.xml*' -x '*phpunit.xml.
+      run: |
+        composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress --no-suggest
+        zip -r asset.zip . -x '*.git*' -x '*.github*' -x '*tests*' -x '*phpunit*' -x '*.vscode*' -x '*phpcs*' -x '*phpstan*' -x '*phpmd*' -x '*php-cs-fixer*' -x '*Makefile' -x '*phpunit.xml*' -x '*phpstan.neon*' -x '*phpmd.xml*' -x '*php-cs-fixer.*' -x '*phpcs.xml*' -x '*phpunit.xml*'
 
     - name: Create a Release
       id: create_release
