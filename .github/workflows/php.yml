@@ -1,0 +1,62 @@
+name: PHP Composer
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Install dev dependencies
+      run: composer install --prefer-dist --no-progress
+
+    - name: Run test suite
+      run: composer test
+
+    - name: Build and zip
+      run: composer install --prefer-dist --no-progress --no-dev --no-interaction --no-scripts --optimize-autoloader && zip -r asset.zip . -x '*.git*' -x '*.github*' -x '*tests*' -x '*phpunit*' -x '*.vscode*' -x '*phpcs*' -x '*phpstan*' -x '*phpmd*' -x '*php-cs-fixer*' -x '*Makefile' -x '*phpunit.xml*' -x '*phpstan.neon*' -x '*phpmd.xml*' -x '*php-cs-fixer.*' -x '*phpcs.xml*' -x '*phpunit.xml*' -x '*phpunit.xml.
+
+    - name: Create a Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./asset.zip
+        asset_name: asset.zip
+        asset_content_type: application/zip
+
