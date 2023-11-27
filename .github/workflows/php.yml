@@ -3,7 +3,7 @@ name: PHP Composer
 on:
   push:
     tags:
-      - v*
+      - 
 
 
 permissions:
@@ -32,7 +32,7 @@ jobs:
     - name: Build and zip
       run: |
         composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress --no-suggest
-        zip -r asset.zip . -x '*.git*' -x '*.github*' -x '*tests*' -x '*phpunit*' -x '*.vscode*' -x '*phpcs*' -x '*phpstan*' -x '*phpmd*' -x '*php-cs-fixer*' -x '*Makefile' -x '*phpunit.xml*' -x '*phpstan.neon*' -x '*phpmd.xml*' -x '*php-cs-fixer.*' -x '*phpcs.xml*' -x '*phpunit.xml*'
+        zip -r metric-poster-plugin.zip . -x '*.git*' -x '*.github*' -x '*tests*' -x '*phpunit*' -x '*.vscode*' -x '*phpcs*' -x '*phpstan*' -x '*phpmd*' -x '*php-cs-fixer*' -x '*Makefile' -x '*phpunit.xml*' -x '*phpstan.neon*' -x '*phpmd.xml*' -x '*php-cs-fixer.*' -x '*phpcs.xml*' -x '*phpunit.xml*'
 
     - name: Create a Release
       id: create_release
@@ -52,7 +52,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./asset.zip
-        asset_name: asset.zip
+        asset_path: ./metric-poster-plugin.zip
+        asset_name: metric-poster-plugin.zip
         asset_content_type: application/zip
 
