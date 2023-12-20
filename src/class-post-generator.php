@@ -86,6 +86,12 @@ class PostGenerator
 				case 'errors':
 				case 'warnings':
 					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
+
+					// skip if $m is empty or not an array.
+					if (empty($m) || ! is_array($m)) {
+						continue;
+					}
+
 					$table = $this->create_table($content_dom, $m, "Top {$metric_key}", 'Count');
 
 					$metric_names = [
@@ -265,6 +271,11 @@ class PostGenerator
 		$td = $dom->createElement('td', $metric_name);
 		$tr->appendChild($td);
 		foreach ($metric_arr as $weekval ) {
+
+			// if $weekval is numeric, format it with thousand seprator.
+			if (is_numeric($weekval)) {
+				$weekval = number_format($weekval);
+			}
 
 			$td = $dom->createElement('td', "{$weekval}");
 			$tr->appendChild($td);
