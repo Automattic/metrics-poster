@@ -4,7 +4,7 @@
  * Plugin Name: Metric Poster
  * Plugin URI:
  * Description: A plugin to generate a post from a template and post it to a P2 site.
- * Version: 1.0.0
+ * Version: 1.0.4
  */
 
 declare(strict_types=1);

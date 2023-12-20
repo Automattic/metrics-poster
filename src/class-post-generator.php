@@ -295,7 +295,12 @@ class PostGenerator
 			
 			// check if previous $column exists.
 			if ($previous_column) {
-				$change = round((($val - $previous_column) / $previous_column) * 100, 2);
+				if (is_numeric($previous_column) && $previous_column != 0) {
+					$change = round((($val - $previous_column) / $previous_column) * 100, 2);
+				} else {
+					$change = 0;
+				}
+				
 				$td = $dom->createElement('td', "{$change}%");
 
 			} else {
