@@ -429,7 +429,7 @@ class SettingsPage
                             <td>
                                 <select name="metric_poster_options[week]">
                                     <option  value="<?php echo get_prev_week_number(); ?>"><?php echo get_prev_week_number(); ?></option>
-                                    <option value="<?php echo date('W') - 2; ?>"><?php echo date('W') - 2; ?></option>
+                                    <option value="<?php echo get_prev_week_number() - 1; ?>"><?php echo get_prev_week_number() - 1; ?></option>
                                 </select>
                             </td>
                         </tr>
