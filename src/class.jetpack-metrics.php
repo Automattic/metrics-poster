@@ -32,7 +32,7 @@ class Jetpack_Metrics {
 		}
     }
 
-    // fetch with guzzle for https://stats.wordpress.com/csv.php?api_key=***REMOVED***&table=views&end=2023-10-07&days=7&blog_id=178044738&format=json
+    // fetch with guzzle for https://stats.wordpress.com/csv.php?api_key=1234567&table=views&end=2023-10-07&days=7&blog_id=178044738&format=json
     public function get_stats($days = 7, $end = null, $table = 'views')
     {
         $client = new Client([
@@ -57,9 +57,7 @@ class Jetpack_Metrics {
         
         // foreach obj in array, sum the property "views"
         $sum = 0;
-        foreach ($json as $obj) {
-            $sum += $obj['views'];
-        }
+        foreach ($json as $obj) { $total += $obj['views']; }
 
         // format number like 2100000 to 2.1M
         $sum = \number_format_short($sum);
