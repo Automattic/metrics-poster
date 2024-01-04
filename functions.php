@@ -38,8 +38,8 @@ function dom_string_replace(DOMDocument &$dom, string $match, mixed $new_value):
 // get prev week number.
 function get_prev_week_number()
 {
-	$week_number = date('W');
-	return $week_number === 1 ? 52 : $week_number - 1;
+	$week_number = (int) date('W');
+	return $week_number === 01 ? 52 : $week_number - 1;
 }
 
 function getPrevKey($key, $hash = array()) {
