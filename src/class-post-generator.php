@@ -183,7 +183,7 @@ class PostGenerator
 					break;
 				case 'cwv_chart':
 					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
-					$table = $this->create_big_table($content_dom, $m, ['Page URL', 'CLS', 'FID', 'LCP', 'Page Views']);
+					$table = $this->create_big_table($content_dom, $m, ['Page URL', 'CLS', 'INP', 'LCP', 'Page Views']);
 
 					// create comment.
 					$comment = $content_dom->createComment(" wp:table ");
@@ -494,7 +494,7 @@ class PostGenerator
 
 		$this->replaceMetric($dom, $metric, 'CLS', 'cumulativeLayoutShift', 0.1, 0.25, '75', '');
 
-		$this->replaceMetric($dom, $metric, 'FID', 'firstInputDelay', 100, 300, '75', 'ms');
+		$this->replaceMetric($dom, $metric, 'INP', 'interactionToNextPaint', 200, 500, '75', 'ms');
 
 		$this->replaceMetric($dom, $metric, 'LCP', 'largestContentfulPaint', 2.5, 4, '75', 's');
 

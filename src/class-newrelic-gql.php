@@ -314,7 +314,7 @@ class NewRelicGQL
 		{
 			actor {
 				account(id: $this->clientid) {
-					nrql(query: "FROM PageViewTiming JOIN (FROM PageView SELECT count(*) as pvcount WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl) ON pageUrl SELECT latest(pvcount) as 'Page Views', percentile(largestContentfulPaint, 75) as 'LCP', percentile(firstInputDelay, 75) AS 'FID', percentile(cumulativeLayoutShift, 75) as 'CLS' WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl") {
+					nrql(query: "FROM PageViewTiming JOIN (FROM PageView SELECT count(*) as pvcount WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl) ON pageUrl SELECT latest(pvcount) as 'Page Views', percentile(largestContentfulPaint, 75) as 'LCP', percentile(interactionToNextPaint, 75) AS 'INP', percentile(cumulativeLayoutShift, 75) as 'CLS' WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl") {
 						results {$this->show_table_graph_query}
 					}
 				}
