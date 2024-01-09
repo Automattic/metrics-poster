@@ -494,7 +494,7 @@ class PostGenerator
 
 		$this->replaceMetric($dom, $metric, 'CLS', 'cumulativeLayoutShift', 0.1, 0.25, '75', '');
 
-		$this->replaceMetric($dom, $metric, 'INP', 'interactionToNextPaint', 200, 500, '75', 'ms');
+		$this->replaceMetric($dom, $metric, 'INP', 'interactionToNextPaint', 0.2, 0.5, '75', 's');
 
 		$this->replaceMetric($dom, $metric, 'LCP', 'largestContentfulPaint', 2.5, 4, '75', 's');
 
