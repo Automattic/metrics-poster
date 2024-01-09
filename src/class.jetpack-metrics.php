@@ -57,7 +57,7 @@ class Jetpack_Metrics {
         
         // foreach obj in array, sum the property "views"
         $sum = 0;
-        foreach ($json as $obj) { $total += $obj['views']; }
+        foreach ($json as $obj) { $sum += $obj['views']; }
 
         // format number like 2100000 to 2.1M
         $sum = \number_format_short($sum);

@@ -332,7 +332,7 @@ class NewRelicGQL
 		{
 			actor {
 				account(id: $this->clientid) {
-					nrql(query: "SELECT percentile(largestContentfulPaint, 75), percentile(firstInputDelay, 75), percentile(cumulativeLayoutShift, 75) FROM PageViewTiming WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
+					nrql(query: "SELECT percentile(largestContentfulPaint, 75), percentile(interactionToNextPaint, 75), percentile(cumulativeLayoutShift, 75) FROM PageViewTiming WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
 						results
 					}
 				}
