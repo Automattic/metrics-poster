@@ -291,10 +291,24 @@ class PostGenerator
 			$previous_column = $metric_arr[$previous_column] ?? null;
 			
 			// check if previous $column exists.
-			if ($previous_column) {
+			if ($previous_column !== null) {
+
+				if ( ! is_numeric($previous_column) ) {
+					// try to remove units from $val and $previous_column.
+					$val = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($val));
+					$previous_column = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($previous_column));
+
+					// convert to float.
+					$val = (float) $val;
+					$previous_column = (float) $previous_column;
+				}
+
 				if (is_numeric($previous_column) && $previous_column != 0) {
 					$change = round((($val - $previous_column) / $previous_column) * 100, 2);
-				} else {
+				} else if (is_numeric($previous_column) && $previous_column == 0) {
+					$change = 100;
+				} 
+				else {
 					$change = 0;
 				}
 				

@@ -42,12 +42,17 @@ function get_prev_week_number( $week_number = null )
 	return $week_number <= 1 ? 52 : $week_number - 1;
 }
 
-function getPrevKey($key, $hash = array()) {
-    $keys = array_keys($hash);
-    $found_index = array_search($key, $keys);
-    if ($found_index === false || $found_index === 0)
-        return false;
-    return $keys[$found_index-1];
+function getPrevKey(int $key, $hash = array()) {
+
+	// if key is 1, return previous key as 52.
+	if ($key === 1) {
+		return 52;
+	}
+
+	// get previous key.
+	$prev_key = $key - 1;
+
+	return $prev_key;
 }
 
 function number_format_short( $number, $precision = 1 ){
