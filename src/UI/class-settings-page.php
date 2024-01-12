@@ -410,7 +410,7 @@ class SettingsPage
                         <tr>
                             <th scope="row">Application</th>
                             <td>
-                                <select name="metric_poster_options[app_name]">
+                                <select id="metric_poster_options-app-name" name="metric_poster_options[app_name]">
                                     <?php
                                     $metric_poster_options = \get_option('metric_poster_options[apps]');
                                     // echo placeholder option.
@@ -428,8 +428,10 @@ class SettingsPage
                             <th scope="row">Week</th>
                             <td>
                                 <select name="metric_poster_options[week]">
-                                    <option  value="<?php echo get_prev_week_number(); ?>"><?php echo get_prev_week_number(); ?></option>
-                                    <option value="<?php echo get_prev_week_number() - 1; ?>"><?php echo get_prev_week_number() - 1; ?></option>
+                                    <?php $prev_week = get_prev_week_number(); ?>
+                                    <?php $prev_weektwo = get_prev_week_number( $prev_week ); ?>
+                                    <option  value="<?php echo $prev_week; ?>"><?php echo $prev_week; ?></option>
+                                    <option value="<?php echo $prev_weektwo; ?>"><?php echo $prev_weektwo; ?></option>
                                 </select>
                             </td>
                         </tr>
@@ -581,7 +583,15 @@ class SettingsPage
                     // on dom ready
                     document.addEventListener('DOMContentLoaded', function() {
                         // on click of #metrics--form submit button
-                        document.getElementById('metrics--form').addEventListener('submit', function() {
+                        document.getElementById('metrics--form').addEventListener('submit', function(e) {
+
+                            // on submit, check #metric_poster_options-app-name for value.
+                            if (document.getElementById('metric_poster_options-app-name').value === '') {
+                                alert('Please select an app.');
+                                e.preventDefault();
+                                return;
+                            }
+
                             // show #loading_spinner
                             document.getElementById('loading_spinner').style.display = 'block';
                         });

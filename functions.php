@@ -36,9 +36,9 @@ function dom_string_replace(DOMDocument &$dom, string $match, mixed $new_value):
 }
 
 // get prev week number.
-function get_prev_week_number()
+function get_prev_week_number( $week_number = null )
 {
-	$week_number = (int) date('W');
+	$week_number = $week_number ?? (int) date('W');
 	return $week_number <= 1 ? 52 : $week_number - 1;
 }
 

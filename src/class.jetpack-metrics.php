@@ -45,8 +45,10 @@ class Jetpack_Metrics {
             'query' => [
                 'api_key' => $this->jp_apikey,
                 'table' => $table,
-                'end' => $end,
-                'days' => $days,
+                // 'end' => $end, // disabling due to bug in jetpack api.
+                'period' => 'week',
+                // 'days' => $days,
+                'days' => 2,
                 'blog_id' => $this->jp_blogid,
                 'format' => 'json'
             ]
@@ -57,7 +59,11 @@ class Jetpack_Metrics {
         
         // foreach obj in array, sum the property "views"
         $sum = 0;
-        foreach ($json as $obj) { $sum += $obj['views']; }
+
+        // foreach ($json as $obj) { $sum += $obj['views']; }
+
+        // get first obj['views'] in array.
+        $sum = $json[0]['views'];
 
         // format number like 2100000 to 2.1M
         $sum = \number_format_short($sum);
