@@ -473,8 +473,40 @@ class NewRelicGQL
 			// add new week to count.
 			$count[ "{$this->week}" ] = $query_results;
 
-			// sort count by week.
-			ksort( $count );
+			
+			// split array into 2 arrays if array contains week 52.
+			end($count);
+			$lastKey = key($count);
+			if ( isset( $count[ "52" ] ) && $lastKey !== 52 ) {
+
+				// create array for keys <= 52.
+				$first_array = array_filter(
+					$count,
+					function ($key) {
+						return $key > 46 && $key <= 52;
+					},
+					ARRAY_FILTER_USE_KEY
+				);
+
+				// create array for keys > 52.
+				$second_array = array_filter(
+					$count,
+					function ($key) {
+						return $key <= 5 && $key > 0;
+					},
+					ARRAY_FILTER_USE_KEY
+				);
+
+				// sort arrays.
+				ksort( $first_array );
+				ksort( $second_array );
+
+				// merge arrays, preserving keys.
+				$count = $first_array + $second_array;
+			} else {
+				// sort count by week.
+				ksort( $count );
+			}
 
 			// trim array to last 6 weeks.
 			if ( count( $count ) > 6 ) {
@@ -552,8 +584,39 @@ class NewRelicGQL
 			// add new week to count.
 			$count[ "{$this->week}" ] = $query_results;
 
-			// sort count by week.
-			ksort( $count );
+			// split array into 2 arrays if array contains week 52.
+			end($count);
+			$lastKey = key($count);
+			if ( isset( $count[ "52" ] ) && $lastKey !== 52 ) {
+
+				// create array for keys <= 52.
+				$first_array = array_filter(
+					$count,
+					function ($key) {
+						return $key > 46 && $key <= 52;
+					},
+					ARRAY_FILTER_USE_KEY
+				);
+
+				// create array for keys > 52.
+				$second_array = array_filter(
+					$count,
+					function ($key) {
+						return $key <= 5 && $key > 0;
+					},
+					ARRAY_FILTER_USE_KEY
+				);
+
+				// sort arrays.
+				ksort( $first_array );
+				ksort( $second_array );
+
+				// merge arrays, preserving keys.
+				$count = $first_array + $second_array;
+			} else {
+				// sort count by week.
+				ksort( $count );
+			}
 
 			// trim array to last 6 weeks.
 			if ( count( $count ) > 6 ) {
