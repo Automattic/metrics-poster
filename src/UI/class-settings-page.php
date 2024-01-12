@@ -382,7 +382,7 @@ class SettingsPage
 
             $show_headings = true;
             $facet = true;
-            $year = get_correct_year();
+            $year = get_correct_year((int) $week);
             $metrics = implode(',', $metrics);
             $NR_ACCOUNT_ID = $app_info->get_nr_id();
             $template_file = $app_info->get_template_file();

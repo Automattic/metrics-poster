@@ -72,7 +72,7 @@ function number_format_short( $number, $precision = 1 ){
 	return $number_format_short;
 }
 
-function get_correct_year( $week = null, $year = null ){
+function get_correct_year( int $week = null, $year = null ){
 	$week = $week ?? get_prev_week_number();
 	$year = $year ?? date('Y');
 	if ($week === 52) {

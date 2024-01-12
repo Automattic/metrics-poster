@@ -48,7 +48,7 @@ class Jetpack_Metrics {
                 // 'end' => $end, // disabling due to bug in jetpack api.
                 'period' => 'week',
                 // 'days' => $days,
-                'days' => 2,
+                'days' => 3,
                 'blog_id' => $this->jp_blogid,
                 'format' => 'json'
             ]
@@ -62,8 +62,19 @@ class Jetpack_Metrics {
 
         // foreach ($json as $obj) { $sum += $obj['views']; }
 
-        // get first obj['views'] in array.
-        $sum = $json[0]['views'];
+        // convert to date stamp.
+        $end = strtotime($end);
+
+        foreach ($json as $obj) { 
+            // if $obj['date'] is closest to $end date, then return it.
+            $obj_date = strtotime($obj['date']);
+            if ($obj_date <= $end) {
+                $sum = $obj['views'];
+            }            
+        }
+
+        // get 2nd obj['views'] in array.
+        // $sum = $json[1]['views'];
 
         // format number like 2100000 to 2.1M
         $sum = \number_format_short($sum);
