@@ -23,6 +23,8 @@ class PostGenerator
 		$this->week = $week;
 		$this->year = $year;
 		$this->nr_metrics = $nr_metrics;
+
+		// TODO: Should be more descriptive as it uses template files and not just headings.
 		$this->show_headings = $show_headings;
 		$this->app_name = $app_name;
 	}
@@ -55,6 +57,7 @@ class PostGenerator
 			dom_string_replace($dom, '{{week}}', $this->week);
 			dom_string_replace($dom, '{{date_range}}', $fweek_title);
 			dom_string_replace($dom, '{{app_name}}', $this->app_name);
+			dom_string_replace($dom, '{{current_year}}', $this->year);
 		}
 
 		// Create the post content with the metrics.
