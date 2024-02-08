@@ -14,10 +14,10 @@ class PostGenerator
 	public int $year;
 	public int $clientid;
 	public $nr_metrics;
-	public bool $show_headings;
+	public bool $show_header_footer;
 	public string $app_name;
 
-	public function __construct(string $file_path, int $week, int $year, $nr_metrics, bool $show_headings, string $app_name = 'test app')
+	public function __construct(string $file_path, int $week, int $year, $nr_metrics, bool $show_header_footer, string $app_name = 'test app')
 	{
 		$this->template_file = $file_path;
 		$this->week = $week;
@@ -25,7 +25,7 @@ class PostGenerator
 		$this->nr_metrics = $nr_metrics;
 
 		// TODO: Should be more descriptive as it uses template files and not just headings.
-		$this->show_headings = $show_headings;
+		$this->show_header_footer = $show_header_footer;
 		$this->app_name = $app_name;
 	}
 
@@ -48,16 +48,19 @@ class PostGenerator
 		$content_dom->loadHTML('<body></body>');
 		$content_body = $content_dom->getElementsByTagName('body')->item(0);
 
-		if ($this->show_headings) {
+		if ($this->show_header_footer) {
 			// Load the template file into a DOMDocument.
 			$html = file_get_contents($this->template_file);
 			$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
-			// $dom->getElementById("p2-title")->nodeValue = $title;
-
+		
 			dom_string_replace($dom, '{{week}}', $this->week);
 			dom_string_replace($dom, '{{date_range}}', $fweek_title);
 			dom_string_replace($dom, '{{app_name}}', $this->app_name);
 			dom_string_replace($dom, '{{current_year}}', $this->year);
+		} else{
+			// file_get_contents($this->template_file);
+			$html = file_get_contents(GUTENBERG_TPL . '/post-no-header-footers.html');
+			$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
 		}
 
 		// Create the post content with the metrics.
@@ -541,7 +544,7 @@ class PostGenerator
 	}
 
 	public function create_p2_headings(&$dom, $heading_type = 'h2',$heading_text = ''){
-		if ($this->show_headings) {
+		if ($this->show_header_footer) {
 			$body_el = $dom->getElementsByTagName('body')->item(0);
 			$comment = $dom->createComment(" wp:heading ");
 			$body_el->appendChild($comment);

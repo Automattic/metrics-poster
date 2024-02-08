@@ -380,7 +380,7 @@ class SettingsPage
                 }
             }
 
-            $show_headings = true;
+            $show_header_footer = $_POST['metric_poster_options']['include_header_footer'] ?? false;
             $facet = true;
             $year = get_correct_year((int) $week);
             $metrics = implode(',', $metrics);
@@ -390,7 +390,7 @@ class SettingsPage
             // Fetch metrics from NewRelic and build a metric object for DI.
             $nr_metrics = new NewRelicGQL($app_info, (int) $week, (int) $year, (int) $NR_ACCOUNT_ID, $metrics, (bool) $facet);
             $metric_results = $nr_metrics->get_results();
-            $pg = new PostGenerator(GUTENBERG_TPL . '/' . $template_file, (int) $week, (int) $year, $metric_results, (bool) $show_headings, (string) $app_info->get_app_name());
+            $pg = new PostGenerator(GUTENBERG_TPL . '/' . $template_file, (int) $week, (int) $year, $metric_results, (bool) $show_header_footer, (string) $app_info->get_app_name());
             $output_post = $pg->create_post();
         }
 
@@ -446,7 +446,13 @@ class SettingsPage
                         </style>
                         <tr>
                             <th scope="row">Metrics</th>
-                            <td>
+                            <td id="metric-type-checkboxes">
+                                <!-- button to uncheck/check all -->
+                                <div class="new-row" style="display: block;margin-bottom: 8px;">
+                                    <button type="button" id="uncheck_all">Uncheck All</button>
+                                    <button type="button" id="check_all">Check All</button>
+                                </div>
+
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="jetpack_pageviews" <?php \checked(1, false, false); ?> />
                                 <label for="metric_poster_options[metrics][]">JP Page Views</label>
 
@@ -467,6 +473,41 @@ class SettingsPage
 
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="500s" <?php \checked(1, false, false); ?> />
                                 <label for="metric_poster_options[metrics][]">500 Errors</label>
+                            </td>
+
+                            <script>
+                                // on dom ready
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    // on click of #uncheck_all
+                                    document.getElementById('uncheck_all').addEventListener('click', function() {
+                                        // get all checkboxes
+                                        var checkboxes = document.querySelectorAll('#metric-type-checkboxes input[type="checkbox"]');
+                                        // loop through checkboxes
+                                        checkboxes.forEach(function(checkbox) {
+                                            // uncheck checkbox
+                                            checkbox.checked = false;
+                                        });
+                                    });
+
+                                    // on click of #check_all
+                                    document.getElementById('check_all').addEventListener('click', function() {
+                                        // get all checkboxes
+                                        var checkboxes = document.querySelectorAll('#metric-type-checkboxes input[type="checkbox"]');
+                                        // loop through checkboxes
+                                        checkboxes.forEach(function(checkbox) {
+                                            // check checkbox
+                                            checkbox.checked = true;
+                                        });
+                                    });
+                                });
+                            </script>
+                        </tr>
+
+                        <!-- row for include header checkbox -->
+                        <tr>
+                            <th scope="row">Include template header and footer?</th>
+                            <td>
+                                <input type="checkbox" name="metric_poster_options[include_header_footer]" value="1" <?php \checked(1, true, true); ?> />
                             </td>
                         </tr>
 
