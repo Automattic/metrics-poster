@@ -37,7 +37,7 @@ class CronSetup {
             $app_info = new AppModel($app_info['app_name'], $app_id, $app_info['nr_id'], $app_info['nr_browser_guid'], $app_info['nr_app_guid'], $app_info['jp_blogid'], $app_info['app_template_file']);
 
             // Automate weekly metric fetch for the followin default.
-            $metrics = ['error_count', 'warning_count'];
+            $metrics = ['error_count', 'warning_count', 'cwv_extended'];
             if ( ! empty($app_info->get_jp_blogid())) {
                 $metrics[] = 'jetpack_pageviews';
             }
