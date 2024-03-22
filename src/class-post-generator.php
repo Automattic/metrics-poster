@@ -343,13 +343,10 @@ class PostGenerator
 				if ($previous_column !== null) {
 
 					if ( ! is_numeric($previous_column) ) {
-						// try to remove units from $val and $previous_column.
-						$val = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($val));
-						$previous_column = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($previous_column));
 
-						// convert to float.
-						$val = (float) $val;
-						$previous_column = (float) $previous_column;
+						// try to remove units from $val and $previous_column.
+						$val = $this->convert_back_to_original_value($val);
+						$previous_column = $this->convert_back_to_original_value($previous_column);
 					}
 
 					if (is_numeric($previous_column) && $previous_column != 0) {
@@ -763,6 +760,37 @@ class PostGenerator
 			$comment = $dom->createComment(" /wp:heading ");
 			$body_el->appendChild($comment);
 		}
+	}
+
+	public function convert_back_to_original_value( $val ){
+		// extract unit from $val and $previous_column. case insensitive.
+		$val_unit = preg_match('/[a-zA-Z]+/', $val, $matches) ? $matches[0] : '';
+		$val_unit = strtolower($val_unit);
+
+		// convert to float.
+		$val = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($val));
+		$val = (float) $val;
+
+		// based on unit, try to convert value to float.
+		switch ($val_unit) {
+			case 'm':
+				$val = (float) $val * 1000000;
+				break;
+			case 'k':
+				$val = (float) $val * 1000;
+				break;
+			case 'b':
+				$val = (float) $val * 1000000000;
+				break;
+			case 't':
+				$val = (float) $val * 1000000000000;
+				break;
+			default:
+				$val = (float) $val;
+				break;
+		}
+
+		return $val;
 	}
 
 }
