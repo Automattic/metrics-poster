@@ -87,6 +87,48 @@ class PostGenerator
 					$content_body->appendChild($comment);
 
 					break;
+				case 'cwv_extended':
+
+					$metric_names = [
+						'cwv_extended' => 'Core Web Vitals',
+					];
+
+					$caption_text = "The period of weekly metrics collection is Sunday to Saturday";
+					$heading_text = "{$metric_names[$metric_key]}";
+
+					$this->create_p2_headings($content_dom, 'h2', $heading_text);
+
+					// get postmeta with meta_key $metric_names[$metric_key]
+					$metric_meta_value = \get_post_meta( $metric->ID, $metric_key, true );
+					
+					if (! $metric_meta_value ) {
+						// wp error log
+						error_log("No postmeta found for {$metric_key} in post {$metric->ID}");
+						
+						continue;
+					}
+
+					// unserialize $metric_meta_value.
+					$metric_array = unserialize($metric_meta_value) ?? [];
+
+					// create create_html_table.
+					$table = $this->create_html_table($content_dom, $metric_array, "cwv");
+
+					$caption = $content_dom->createElement('figcaption', $caption_text);
+					$caption->setAttribute('class', 'wp-element-caption');
+					$table->appendChild($caption);
+
+					// create comment.
+					$comment = $content_dom->createComment(" wp:table ");
+					$content_body->appendChild($comment);
+
+					// append table to dom.
+					$content_body->appendChild($table);
+
+					// create closing comment and append to dom.
+					$comment = $content_dom->createComment(" /wp:table ");
+					$content_body->appendChild($comment);
+					break;
 				case '404s':
 				case '500s':
 				case 'errors':
@@ -267,67 +309,104 @@ class PostGenerator
 		$thead->appendChild($tr);
 		$table->appendChild($thead);
 
-		// for each row in $metric_arr, create a row in the table.
-		$tr = $dom->createElement('tr');
+		if ( $metric_name != 'cwv') {
+			// for each row in $metric_arr, create a row in the table.
+			$tr = $dom->createElement('tr');
 
-		// header cell.
-		$td = $dom->createElement('td', $metric_name);
-		$tr->appendChild($td);
-		foreach ($metric_arr as $weekval ) {
+			// header cell.
+			$td = $dom->createElement('td', $metric_name);
+			$tr->appendChild($td);
+			foreach ($metric_arr as $weekval ) {
 
-			// if $weekval is numeric, format it with thousand seprator.
-			if (is_numeric($weekval)) {
-				$weekval = number_format($weekval);
+				// if $weekval is numeric, format it with thousand seprator.
+				if (is_numeric($weekval)) {
+					$weekval = number_format($weekval);
+				}
+
+				$td = $dom->createElement('td', "{$weekval}");
+				$tr->appendChild($td);
+
+				$tbody->appendChild($tr);
 			}
 
-			$td = $dom->createElement('td', "{$weekval}");
+			$tr = $dom->createElement('tr');
+			$td = $dom->createElement('td', 'Change');
 			$tr->appendChild($td);
 
-			$tbody->appendChild($tr);
-		}
+			foreach ($metric_arr as $key => $val) {
 
-		$tr = $dom->createElement('tr');
-		$td = $dom->createElement('td', 'Change');
-		$tr->appendChild($td);
-
-		foreach ($metric_arr as $key => $val) {
-
-			// get previous item in array.
-			$previous_column = getPrevKey($key, $metric_arr);
-			$previous_column = $metric_arr[$previous_column] ?? null;
-			
-			// check if previous $column exists.
-			if ($previous_column !== null) {
-
-				if ( ! is_numeric($previous_column) ) {
-					// try to remove units from $val and $previous_column.
-					$val = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($val));
-					$previous_column = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($previous_column));
-
-					// convert to float.
-					$val = (float) $val;
-					$previous_column = (float) $previous_column;
-				}
-
-				if (is_numeric($previous_column) && $previous_column != 0) {
-					$change = round((($val - $previous_column) / $previous_column) * 100, 2);
-				} else if (is_numeric($previous_column) && $previous_column == 0) {
-					$change = 100;
-				} 
-				else {
-					$change = 0;
-				}
+				// get previous item in array.
+				$previous_column = getPrevKey($key, $metric_arr);
+				$previous_column = $metric_arr[$previous_column] ?? null;
 				
-				$td = $dom->createElement('td', "{$change}%");
+				// check if previous $column exists.
+				if ($previous_column !== null) {
 
-			} else {
-				$td = $dom->createElement('td', "0%");
+					if ( ! is_numeric($previous_column) ) {
+						// try to remove units from $val and $previous_column.
+						$val = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($val));
+						$previous_column = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($previous_column));
+
+						// convert to float.
+						$val = (float) $val;
+						$previous_column = (float) $previous_column;
+					}
+
+					if (is_numeric($previous_column) && $previous_column != 0) {
+						$change = round((($val - $previous_column) / $previous_column) * 100, 2);
+					} else if (is_numeric($previous_column) && $previous_column == 0) {
+						$change = 100;
+					} 
+					else {
+						$change = 0;
+					}
+					
+					$td = $dom->createElement('td', "{$change}%");
+
+				} else {
+					$td = $dom->createElement('td', "0%");
+				}
+
+				$tr->appendChild($td);
 			}
 
-			$tr->appendChild($td);
-		}
+			// close change row.
+			$tbody->appendChild($tr);
 
-		$tbody->appendChild($tr);
+		} else {
+
+			// get last item from $metric_arr for headings.
+			$last_item = end($metric_arr);
+			
+			foreach ($last_item as $cwv_name => $v) { 
+				$tr = $dom->createElement('tr');
+
+				$fcwv_name = str_replace('percentile.', '', $cwv_name);
+
+				$td = $dom->createElement('td', $fcwv_name);
+				$tr->appendChild($td);
+
+				$cwv_unit = $this->format_cwv_metric($fcwv_name);
+
+				foreach ($metric_arr as $week => $cwv) {
+
+					// if $cwv[$cwv_name] is numeric, format it to two decimal places.
+					$cwv_value = $cwv[$cwv_name]['75'] ?? 0;
+					if (is_numeric($cwv_value)) {
+						$cwv_value = number_format($cwv_value, 2);
+					}
+
+					$td = $dom->createElement('td', "{$cwv_value} {$cwv_unit}");
+
+					// add inline style to td.
+					$td->setAttribute('style', $this->metric_value_color($cwv_value, $fcwv_name));
+
+					$tr->appendChild($td);
+				}
+
+				$tbody->appendChild($tr);
+			}
+		}
 
 		$table->appendChild($tbody);
 
@@ -422,6 +501,131 @@ class PostGenerator
 		return $figure;
 	}
 
+	public function metric_value_color($value, $metric_name = '')
+	{
+		// colors
+		$vivid_green_cyan = '#00D084';
+		$luminous_vivid_amber = '#FFC400';
+		$vivid_red = '#CF2E2E';
+
+		// text color
+		$black = 'black';
+		$white = 'white';
+
+		// default color.
+		$text_color = $black;
+
+		switch ($metric_name) {
+			case 'CLS':
+			case 'cumulativeLayoutShift':
+				if ($value <= 0.1) {
+					$color_hex = $vivid_green_cyan;
+				} else if ($value > 0.25) {
+					$color_hex = $vivid_red;
+					$text_color = $white;
+				} else {
+					$color_hex = $luminous_vivid_amber;
+				}
+				break;
+			case 'FCP':
+			case 'firstContentfulPaint':
+				if ($value <= 2.5) {
+					$color_hex = $vivid_green_cyan;
+				} else if ($value > 4) {
+					$color_hex = $vivid_red;
+					$text_color = $white;
+				} else {
+					$color_hex = $luminous_vivid_amber;
+				}
+				break;
+			case 'FID':
+			case 'firstInputDelay':
+				if ($value <= 0.2) {
+					$color_hex = $vivid_green_cyan;
+				} else if ($value > 0.5) {
+					$color_hex = $vivid_red;
+					$text_color = $white;
+				} else {
+					$color_hex = $luminous_vivid_amber;
+				}
+				break;
+			case 'LCP':
+			case 'largestContentfulPaint':
+				if ($value <= 2.5) {
+					$color_hex = $vivid_green_cyan;
+				} else if ($value > 4) {
+					$color_hex = $vivid_red;
+					$text_color = $white;
+				} else {
+					$color_hex = $luminous_vivid_amber;
+				}
+				break;
+			case 'FP':
+			case 'firstPaint':
+				if ($value <= 2.5) {
+					$color_hex = $vivid_green_cyan;
+				} else if ($value > 4) {
+					$color_hex = $vivid_red;
+					$text_color = $white;
+				} else {
+					$color_hex = $luminous_vivid_amber;
+				}
+				break;
+			case 'INP':
+			case 'interactionToNextPaint':
+				if ($value <= 0.2) {
+					$color_hex = $vivid_green_cyan;
+				} else if ($value > 0.5) {
+					$color_hex = $vivid_red;
+					$text_color = $white;
+				} else {
+					$color_hex = $luminous_vivid_amber;
+				}
+				break;
+			default:
+				$color_hex = '';
+				break;
+		}
+		
+		if (!empty($color_hex)) {
+			return "background-color: {$color_hex}; color: {$text_color};";
+		} else {
+			return "";
+		}
+		
+	}
+
+	public function format_cwv_metric( $metric )
+	{
+		// switch case for each metric value to include time unit.
+		switch ($metric) {
+			case 'cumulativeLayoutShift':
+				$unit = 's';
+				break;
+			case 'firstContentfulPaint':
+				$unit = 's';
+				break;
+			case 'firstInputDelay':
+				$unit = 'ms';
+				break;
+			case 'largestContentfulPaint':
+				$unit = 's';
+				break;
+			case 'firstPaint':
+				$unit = 's';
+				break;
+			case 'interactionToNextPaint':
+				$unit = 's';
+				break;
+			default:
+				$unit = '';
+				break;
+		}
+
+		return $unit;
+	}
+
+
 	public function create_big_table(&$dom, $nr_metrics, $headers = [], $transaction_type = 'facet')
 	{
 		$table = $dom->createElement('table');
@@ -482,6 +686,11 @@ class PostGenerator
 	
 				// Create table cells and append to row.
 				$td = $dom->createElement('td', "{$value}");
+
+				$inline_style = $this->metric_value_color($value, $key);
+
+				$td->setAttribute('style', $inline_style);
+
 				$tr->appendChild($td);
 				$counter_loop++;
 			}

@@ -84,6 +84,7 @@ class NewRelicGQL
 			'warnings' => 'get_php_warnings',
 			'warning_count' => 'get_warning_count',
 			'cwv' => 'get_browser_web_vitals',
+			'cwv_extended' => 'get_browser_web_vitals_extended',
 			'cwv_chart' => 'get_cwv_by_pageview_chart',
 			'jetpack_pageviews' => 'get_jetpack_pageviews',
 			'transactions' => 'get_top_slow_transactions',
@@ -310,15 +311,20 @@ class NewRelicGQL
 
 	public function get_cwv_by_pageview_chart()
 	{
+		$cwv_query = "FROM PageViewTiming JOIN (FROM PageView SELECT count(*) as pvcount";
+		$cwv_query .= " WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl) ON pageUrl";
+		$cwv_query .= " SELECT latest(pvcount) as 'Page Views', percentile(largestContentfulPaint, 75) as 'LCP', percentile(interactionToNextPaint, 75) AS 'INP', percentile(cumulativeLayoutShift, 75) as 'CLS'";
+		$cwv_query .= " WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl";
+
 		$query = <<<QUERY
 		{
 			actor {
 				account(id: $this->clientid) {
-					nrql(query: "FROM PageViewTiming JOIN (FROM PageView SELECT count(*) as pvcount WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl) ON pageUrl SELECT latest(pvcount) as 'Page Views', percentile(largestContentfulPaint, 75) as 'LCP', percentile(interactionToNextPaint, 75) AS 'INP', percentile(cumulativeLayoutShift, 75) as 'CLS' WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl") {
+					nrql(query: "{$cwv_query}") {
 						results {$this->show_table_graph_query}
 					}
 				}
-			  }
+			}
 		}
 		QUERY;
 
@@ -328,19 +334,49 @@ class NewRelicGQL
 
 	public function get_browser_web_vitals()
 	{
+
+		$cwv_query = "SELECT percentile(largestContentfulPaint, 75), percentile(interactionToNextPaint, 75), percentile(cumulativeLayoutShift, 75)";
+		$cwv_query .= "  FROM PageViewTiming WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'";
+
 		$query = <<<QUERY
 		{
 			actor {
 				account(id: $this->clientid) {
-					nrql(query: "SELECT percentile(largestContentfulPaint, 75), percentile(interactionToNextPaint, 75), percentile(cumulativeLayoutShift, 75) FROM PageViewTiming WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
+					nrql(query: "{$cwv_query}") {
 						results
 					}
 				}
-			  }
+			}
 		}
 		QUERY;
 
 		return $this->nrqlQuery($query);
+	}
+
+	public function get_browser_web_vitals_extended()
+	{
+
+		$cwv_query = "SELECT percentile(firstPaint, 75),";
+		$cwv_query .= " percentile(firstContentfulPaint, 75),";
+		$cwv_query .= " percentile(interactionToNextPaint, 75),";
+		$cwv_query .= " percentile(cumulativeLayoutShift, 75),";
+		$cwv_query .= " percentile(largestContentfulPaint, 75)";
+		$cwv_query .= "  FROM PageViewTiming WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'";
+
+		$query = <<<QUERY
+		{
+			actor {
+				account(id: $this->clientid) {
+					nrql(query: "{$cwv_query}") {
+						results
+					}
+				}
+			}
+		}
+		QUERY;
+
+		$mpost_id = $this->update_metric_posts('cwv_extended', $query);
+		return \get_post($mpost_id);
 	}
 
 	public function get_top_slow_transactions()
@@ -453,6 +489,36 @@ class NewRelicGQL
 		return $count;
 	}
 
+	/**
+	 * Handle query results from New Relic.
+	 *
+	 * @param string $type
+	 * @param array $query_results
+	 * @return mixed
+	 */
+	public function handle_query_results( $type = 'count', $query_results = array() ) {
+
+		// switch case
+		switch ( $type ) {
+			case 'error_count':
+			case 'warning_count':
+			case 'count':
+				// get count from query results.
+				$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'];
+				break;
+			case 'cwv':
+			case 'cwv_extended':
+				// get results from query results.
+				$query_results = $query_results['data']['actor']['account']['nrql']['results'][0];
+				break;
+			default:
+				$query_results = $query_results['data']['actor']['account']['nrql']['results'];
+				break;
+		}
+
+		return $query_results;
+	}
+
 	// TODO: refactor and combine with get_jetpack_pageviews.
 	// function to fetch and update cpt metric_posts
 	public function update_metric_posts( $metaname = 'error_count', $query )
@@ -482,7 +548,7 @@ class NewRelicGQL
 			
 			// run query.
 			$query_results = $this->nrqlQuery( $query );
-			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? 0;
+			$query_results = $this->handle_query_results( $metaname, $query_results );
 
 			// add post meta.
 			\add_post_meta( $post_id, 'appid', $this->appid );
@@ -507,15 +573,14 @@ class NewRelicGQL
 
 			// run query.
 			$query_results = $this->nrqlQuery( $query );
-			$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? 0;
+			$query_results = $this->handle_query_results( $metaname, $query_results );
 
-			// add new week to count.
+			// add new week to count. NOTE: week is the key.
 			$count[ "{$this->week}" ] = $query_results;
-
 			
 			$count = $this->handle_metric_sorting($count);
 
-			// update post meta.
+			// update or add post meta.
 			\update_post_meta( $posts[0]->ID, $metaname, $count );
 
 			$post_id = $posts[0]->ID;
