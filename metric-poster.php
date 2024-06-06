@@ -4,7 +4,7 @@
  * Plugin Name: Metric Poster
  * Plugin URI: https://github.com/Automattic/metrics-poster
  * Description: A plugin to generate a post from a template and post it to a P2 site.
- * Version: 1.0.24
+ * Version: 1.0.25
  */
 
 declare(strict_types=1);

@@ -114,9 +114,9 @@ class PostGenerator
 					$metric_array = unserialize($metric_meta_value) ?? [];
 
 					// if cwv_mobile_extended, get last item from $metric_array.
-					if ($metric_key == 'cwv_mobile_extended') {
-						$metric_array = end($metric_array);
-					}
+					// if ($metric_key == 'cwv_mobile_extended') {
+					// 	$metric_array = end($metric_array);
+					// }
 
 					// create create_html_table.
 					$table = $this->create_html_table($content_dom, $metric_array, "{$metric_key}");
@@ -383,9 +383,9 @@ class PostGenerator
 			$last_item = end($metric_arr);
 
 			// if is cwv_mobile_extended, get last item from $last_item again.
-			// if ($metric_name == 'cwv_mobile_extended') {
-			// 	$last_item = end($last_item);
-			// }
+			if ($metric_name == 'cwv_mobile_extended') {
+				$last_item = end($last_item);
+			}
 			
 			foreach ($last_item as $cwv_name => $v) { 
 				$tr = $dom->createElement('tr');
@@ -398,6 +398,9 @@ class PostGenerator
 				$cwv_unit = $this->format_cwv_metric($fcwv_name);
 
 				foreach ($metric_arr as $week => $cwv) {
+					if ($metric_name == 'cwv_mobile_extended') {
+						$cwv = end($cwv);
+					}
 
 					// if $cwv[$cwv_name] is numeric, format it to two decimal places.
 					$cwv_value = $cwv[$cwv_name]['75'] ?? 0;
