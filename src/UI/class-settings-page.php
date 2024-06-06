@@ -378,6 +378,9 @@ class SettingsPage
                     case 'cwv_extended':
                         $metrics[] = 'cwv_extended';
                         break;
+                    case 'cwv_mobile_extended':
+                        $metrics[] = 'cwv_mobile_extended';
+                        break;
                     default:
                         $metrics[] = $metric;
                 }
@@ -473,6 +476,9 @@ class SettingsPage
 
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv_extended" <?php \checked(1, false, true); ?> />
                                 <label for="metric_poster_options[metrics][]">CWV Extended</label>
+
+                                <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv_mobile_extended" <?php \checked(1, false, true); ?> />
+                                <label for="metric_poster_options[metrics][]">CWV Mobile Extended</label>
 
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="404s" <?php \checked(1, false, false); ?> />
                                 <label for="metric_poster_options[metrics][]">404 Errors</label>

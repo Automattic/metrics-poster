@@ -47,12 +47,18 @@ class NewRelicGQL
 			$this->show_table_graph_query = ', embeddedChartUrl(chartType: TABLE), staticChartUrl(chartType: TABLE, format: PNG, height: 480, width: 768)';
 		}
 
-		
-		if ( \vip_get_env_var( 'NEW_RELIC_API_KEY', '' ) || $_ENV['NEW_RELIC_API_KEY'] ) {
-			$this->nrkey = \vip_get_env_var( 'NEW_RELIC_API_KEY', $_ENV['NEW_RELIC_API_KEY'] ?? '' );
+		if ( \wp_get_environment_type() === 'local' ) {
+			# use phpdotenv to get NEW_RELIC_API_KEY from .env
+			$dotenv = \Dotenv\Dotenv::createImmutable( dirname( __DIR__ ) );
+			$dotenv->load();
+			$this->nrkey = $_ENV['NEW_RELIC_API_KEY'];
 		} else {
-			throw new InvalidArgumentException( 'New Relic API key not defined' );
-		} 
+			if ( \vip_get_env_var( 'NEW_RELIC_API_KEY', '' ) ) {
+				$this->nrkey = \vip_get_env_var( 'NEW_RELIC_API_KEY', $_ENV['NEW_RELIC_API_KEY'] ?? '' );
+			} else {
+				throw new InvalidArgumentException( 'New Relic API key not defined' );
+			} 
+		}
 
 		// check if key is set
 		if (empty($this->nrkey)) {
@@ -85,6 +91,7 @@ class NewRelicGQL
 			'warning_count' => 'get_warning_count',
 			'cwv' => 'get_browser_web_vitals',
 			'cwv_extended' => 'get_browser_web_vitals_extended',
+			'cwv_mobile_extended' => 'get_browser_web_vitals_mobile_extended',
 			'cwv_chart' => 'get_cwv_by_pageview_chart',
 			'jetpack_pageviews' => 'get_jetpack_pageviews',
 			'transactions' => 'get_top_slow_transactions',
@@ -376,6 +383,32 @@ class NewRelicGQL
 		QUERY;
 
 		$mpost_id = $this->update_metric_posts('cwv_extended', $query);
+		return \get_post($mpost_id);
+	}
+
+	public function get_browser_web_vitals_mobile_extended()
+	{
+
+		$cwv_query = "SELECT percentile(firstPaint, 75),";
+		$cwv_query .= " percentile(firstContentfulPaint, 75),";
+		$cwv_query .= " percentile(interactionToNextPaint, 75),";
+		$cwv_query .= " percentile(cumulativeLayoutShift, 75),";
+		$cwv_query .= " percentile(largestContentfulPaint, 75)";
+		$cwv_query .= "  FROM PageViewTiming WHERE (entityGuid = '{$this->browser_guid}') AND deviceType = 'Mobile' SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'";
+
+		$query = <<<QUERY
+		{
+			actor {
+				account(id: $this->clientid) {
+					nrql(query: "{$cwv_query}") {
+						results
+					}
+				}
+			}
+		}
+		QUERY;
+
+		$mpost_id = $this->update_metric_posts('cwv_mobile_extended', $query);
 		return \get_post($mpost_id);
 	}
 

@@ -88,9 +88,11 @@ class PostGenerator
 
 					break;
 				case 'cwv_extended':
+				case 'cwv_mobile_extended':
 
 					$metric_names = [
 						'cwv_extended' => 'Core Web Vitals',
+						'cwv_mobile_extended' => 'Core Web Vitals Mobile',
 					];
 
 					$caption_text = "The period of weekly metrics collection is Sunday to Saturday";
@@ -111,8 +113,13 @@ class PostGenerator
 					// unserialize $metric_meta_value.
 					$metric_array = unserialize($metric_meta_value) ?? [];
 
+					// if cwv_mobile_extended, get last item from $metric_array.
+					if ($metric_key == 'cwv_mobile_extended') {
+						$metric_array = end($metric_array);
+					}
+
 					// create create_html_table.
-					$table = $this->create_html_table($content_dom, $metric_array, "cwv");
+					$table = $this->create_html_table($content_dom, $metric_array, "{$metric_key}");
 
 					$caption = $content_dom->createElement('figcaption', $caption_text);
 					$caption->setAttribute('class', 'wp-element-caption');
@@ -309,7 +316,7 @@ class PostGenerator
 		$thead->appendChild($tr);
 		$table->appendChild($thead);
 
-		if ( $metric_name != 'cwv') {
+		if ( $metric_name != 'cwv_extended' && $metric_name != 'cwv_mobile_extended') {
 			// for each row in $metric_arr, create a row in the table.
 			$tr = $dom->createElement('tr');
 
@@ -374,6 +381,11 @@ class PostGenerator
 
 			// get last item from $metric_arr for headings.
 			$last_item = end($metric_arr);
+
+			// if is cwv_mobile_extended, get last item from $last_item again.
+			// if ($metric_name == 'cwv_mobile_extended') {
+			// 	$last_item = end($last_item);
+			// }
 			
 			foreach ($last_item as $cwv_name => $v) { 
 				$tr = $dom->createElement('tr');
