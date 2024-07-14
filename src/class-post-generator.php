@@ -91,8 +91,8 @@ class PostGenerator
 				case 'cwv_mobile_extended':
 
 					$metric_names = [
-						'cwv_extended' => 'Core Web Vitals',
-						'cwv_mobile_extended' => 'Core Web Vitals Mobile',
+						'cwv_extended' => 'Core Web Vitals Week Over Week',
+						'cwv_mobile_extended' => 'Core Web Vitals (Mobile) Week Over Week',
 					];
 
 					$caption_text = "The period of weekly metrics collection is Sunday to Saturday";
@@ -147,15 +147,19 @@ class PostGenerator
 						continue;
 					}
 
-					$table = $this->create_table($content_dom, $m, "Top {$metric_key}", 'Count');
-
+					
 					$metric_names = [
 						'404s' => '404s',
 						'500s' => '500s',
 						'errors' => 'Errors',
 						'warnings' => 'Warnings'
 					];
+					
+					$heading_text = "Top {$metric_names[$metric_key]}";
 
+					$this->create_p2_headings($content_dom, 'h2', $heading_text);
+					$table = $this->create_table($content_dom, $m, "{$metric_key}", 'Count');
+					
 					$caption_text = "Counts and listing of most frequently occurring {$metric_names[$metric_key]}";
 					$caption = $content_dom->createElement('figcaption', $caption_text);
 					$caption->setAttribute('class', 'wp-element-caption');
@@ -765,16 +769,14 @@ class PostGenerator
 	}
 
 	public function create_p2_headings(&$dom, $heading_type = 'h2',$heading_text = ''){
-		if ($this->show_header_footer) {
-			$body_el = $dom->getElementsByTagName('body')->item(0);
-			$comment = $dom->createComment(" wp:heading ");
-			$body_el->appendChild($comment);
-			$h2 = $dom->createElement($heading_type, $heading_text);
-			$h2->setAttribute('class', 'wp-block-heading');
-			$body_el->appendChild($h2);
-			$comment = $dom->createComment(" /wp:heading ");
-			$body_el->appendChild($comment);
-		}
+		$body_el = $dom->getElementsByTagName('body')->item(0);
+		$comment = $dom->createComment(" wp:heading ");
+		$body_el->appendChild($comment);
+		$h2 = $dom->createElement($heading_type, $heading_text);
+		$h2->setAttribute('class', 'wp-block-heading');
+		$body_el->appendChild($h2);
+		$comment = $dom->createComment(" /wp:heading ");
+		$body_el->appendChild($comment);
 	}
 
 	public function convert_back_to_original_value( $val ){

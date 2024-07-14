@@ -49,8 +49,6 @@ class NewRelicGQL
 
 		if ( \wp_get_environment_type() === 'local' ) {
 			# use phpdotenv to get NEW_RELIC_API_KEY from .env
-			$dotenv = \Dotenv\Dotenv::createImmutable( dirname( __DIR__ ) );
-			$dotenv->load();
 			$this->nrkey = $_ENV['NEW_RELIC_API_KEY'];
 		} else {
 			if ( \vip_get_env_var( 'NEW_RELIC_API_KEY', '' ) ) {
