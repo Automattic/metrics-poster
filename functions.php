@@ -42,15 +42,27 @@ function get_prev_week_number( $week_number = null )
 	return $week_number <= 1 ? 52 : $week_number - 1;
 }
 
-function getPrevKey(int $key, $hash = array()) {
+function getPrevKey($current_key, $arr = []) {
 
 	// if key is 1, return previous key as 52.
-	if ($key === 1) {
+	if ($current_key === 1) {
 		return 52;
 	}
 
-	// get previous key.
-	$prev_key = $key - 1;
+	// if key is numeric and greater than 1, return previous key.
+	if (is_numeric($current_key) && $current_key > 1) {
+		return $current_key - 1;
+	}
+	
+	// if key is not numeric, return previous key.
+	$keys = array_keys($arr);
+	$prev_key = false;
+	foreach ($keys as $k) {
+		if ($k === $current_key) {
+			return $prev_key;
+		}
+		$prev_key = $k;
+	}
 
 	return $prev_key;
 }
@@ -85,3 +97,67 @@ function get_correct_year( int $week = null, $year = null ){
 	}
 	return $year;
 }
+
+function convert_back_to_original_value( $val ){
+	// extract unit from $val and $previous_column. case insensitive.
+	$val_unit = preg_match('/[a-zA-Z]+/', $val, $matches) ? $matches[0] : '';
+	$val_unit = strtolower($val_unit);
+
+	// convert to float.
+	$val = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($val));
+	$val = (float) $val;
+
+	// based on unit, try to convert value to float.
+	switch ($val_unit) {
+		case 'm':
+			$val = (float) $val * 1000000;
+			break;
+		case 'k':
+			$val = (float) $val * 1000;
+			break;
+		case 'b':
+			$val = (float) $val * 1000000000;
+			break;
+		case 't':
+			$val = (float) $val * 1000000000000;
+			break;
+		default:
+			$val = (float) $val;
+			break;
+	}
+
+	return $val;
+}
+
+function get_cwv_metric( $metric )
+{
+	// switch case for each metric value to include time unit.
+	switch ($metric) {
+		case 'cumulativeLayoutShift':
+			$unit = 's';
+			break;
+		case 'firstContentfulPaint':
+			$unit = 's';
+			break;
+		case 'firstInputDelay':
+			$unit = 'ms';
+			break;
+		case 'largestContentfulPaint':
+			$unit = 's';
+			break;
+		case 'firstPaint':
+			$unit = 's';
+			break;
+		case 'interactionToNextPaint':
+			$unit = 's';
+			break;
+		default:
+			$unit = '';
+			break;
+	}
+
+	return $unit;
+}
+
+
+

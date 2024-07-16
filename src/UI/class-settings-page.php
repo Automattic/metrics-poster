@@ -357,7 +357,7 @@ class SettingsPage
 
                         // if $app_info['jp_blogid'] is not set, skip.
                         if (empty($app_info->get_jp_blogid())) {
-                            continue;
+                            continue 2;
                         }
 
                         $metrics[] = 'jetpack_pageviews';

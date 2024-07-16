@@ -105,7 +105,7 @@ class NewRelicGQL
 		return $results;
 	}
 
-	private function nrqlQuery(string $query): array
+	private function nrqlQuery(string $query): string
 	{
 		// Send the API request and handle response
 		try {
@@ -116,12 +116,13 @@ class NewRelicGQL
 			]);
 
 			$body = $response->getBody()->getContents();
-			return json_decode($body, true);
+			// return json_decode($body, true);
+			return $body;
 		} catch (\Exception $e) {
 			// Handle the exception (e.g., log the error)
 			// For now, just return an empty array
 			echo $e->getMessage();
-			return [];
+			return '';
 		}
 	}
 
@@ -152,7 +153,7 @@ class NewRelicGQL
 		return $this->nrqlQuery($query);
 	}
 
-	public function get_top_404s(): array
+	public function get_top_404s(): string
 	{
 		$start = $this->date_range["week_start_system"];
 		$end = $this->date_range["week_end_system"];
@@ -174,7 +175,7 @@ class NewRelicGQL
 		return $this->nrqlQuery($query);
 	}
 
-	public function get_top_500s(): array
+	public function get_top_500s(): string
 	{
 		$facet_query = $this->facet_group ? "FACET request.uri" : "";
 
@@ -193,7 +194,7 @@ class NewRelicGQL
 		return $this->nrqlQuery($query);
 	}
 
-	public function get_php_errors(): array
+	public function get_php_errors(): string
 	{
 		// Validate input parameters
 		if (empty($this->clientid) || empty($this->app_guid)) {
@@ -318,7 +319,7 @@ class NewRelicGQL
 	{
 		$cwv_query = "FROM PageViewTiming JOIN (FROM PageView SELECT count(*) as pvcount";
 		$cwv_query .= " WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl) ON pageUrl";
-		$cwv_query .= " SELECT latest(pvcount) as 'Page Views', percentile(largestContentfulPaint, 75) as 'LCP', percentile(interactionToNextPaint, 75) AS 'INP', percentile(cumulativeLayoutShift, 75) as 'CLS'";
+		$cwv_query .= " SELECT latest(pvcount) as 'pageViews', percentile(largestContentfulPaint, 75) as 'LCP', percentile(interactionToNextPaint, 75) AS 'INP', percentile(cumulativeLayoutShift, 75) as 'CLS'";
 		$cwv_query .= " WHERE (entityGuid = '{$this->browser_guid}') SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' FACET pageUrl";
 
 		$query = <<<QUERY
@@ -435,6 +436,8 @@ class NewRelicGQL
 	{
 		$transactionTypesData = $this->get_top_transaction_types();
 
+		$transactionTypesData = json_decode($transactionTypesData, true);
+
 		if (!isset($transactionTypesData['data']['actor']['account']['nrql']['results'])) {
 			return "";
 		}
@@ -450,7 +453,7 @@ class NewRelicGQL
 	}
 
 	// return type array.
-	public function get_top_transaction_types(): array
+	public function get_top_transaction_types(): string
 	{
 
 		$facet_query = "";
@@ -524,11 +527,13 @@ class NewRelicGQL
 	 * Handle query results from New Relic.
 	 *
 	 * @param string $type
-	 * @param array $query_results
+	 * @param string $query_results JSON string.
 	 * @return mixed
 	 */
-	public function handle_query_results( $type = 'count', $query_results = array() ) {
+	public function handle_query_results( string $type = 'count', string $query_results = '' ) {
 
+		$query_results = json_decode( $query_results, true );
+		
 		// switch case
 		switch ( $type ) {
 			case 'error_count':
@@ -539,6 +544,7 @@ class NewRelicGQL
 				break;
 			case 'cwv':
 			case 'cwv_extended':
+			case 'cwv_mobile_extended':
 				// get results from query results.
 				$query_results = $query_results['data']['actor']['account']['nrql']['results'][0];
 				break;
@@ -552,7 +558,7 @@ class NewRelicGQL
 
 	// TODO: refactor and combine with get_jetpack_pageviews.
 	// function to fetch and update cpt metric_posts
-	public function update_metric_posts( $metaname = 'error_count', $query )
+	public function update_metric_posts( $metaname = 'error_count', string $query = '' )
 	{
 		// fetch cpt metric_posts by postmeta appid.
 		$args = array( 

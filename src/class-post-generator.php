@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MetricPoster;
 
 use function MetricPoster\Utils\zapier_webhook_trigger;
+use MetricPoster\JsonToGutenbergTable;
 use \DOMDocument;
 
 class PostGenerator
@@ -70,6 +71,9 @@ class PostGenerator
 
 					$this->create_p2_headings($content_dom, 'h2', 'Core Web Vitals (CWV)');
 
+					// convert json to array.
+					$metric = json_decode($metric, true);
+
 					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
 					$cwv_template_html = $this->create_cwv_html($m);
 					$importedNode = $content_dom->importNode($cwv_template_html, true);
@@ -98,7 +102,6 @@ class PostGenerator
 					$caption_text = "The period of weekly metrics collection is Sunday to Saturday";
 					$heading_text = "{$metric_names[$metric_key]}";
 
-					$this->create_p2_headings($content_dom, 'h2', $heading_text);
 
 					// get postmeta with meta_key $metric_names[$metric_key]
 					$metric_meta_value = \get_post_meta( $metric->ID, $metric_key, true );
@@ -111,42 +114,116 @@ class PostGenerator
 					}
 
 					// unserialize $metric_meta_value.
-					$metric_array = unserialize($metric_meta_value) ?? [];
+					$weekly_cwv_metrics = unserialize($metric_meta_value) ?? [];
 
-					// if cwv_mobile_extended, get last item from $metric_array.
-					// if ($metric_key == 'cwv_mobile_extended') {
-					// 	$metric_array = end($metric_array);
-					// }
+					// if $weekly_cwv_metrics is empty, continue.
+					if (empty($weekly_cwv_metrics)) {
+						continue;
+					}
+
+					// create pivot_columns.
+					$week_array = array_keys($weekly_cwv_metrics);
+
+					// create pivot_columns.
+					$week_headers = array_map(function( $key ) {
+						return "Week {$key}";
+					}, $week_array);
+
+					array_unshift($week_headers, ''); // first header column is empty.
+
+					// create cwv rows.
+					$rows = [
+						'cumulativeLayoutShift' => ['metric' => 'Cumulative Layout Shift (CLS)', 'slug' => 'cumulativeLayoutShift', 'data' => []],
+						'firstContentfulPaint' => ['metric' => 'First Contentful Paint (FCP)', 'slug' => 'firstContentfulPaint', 'data' => []],
+						'firstPaint' => ['metric' => 'First Paint', 'slug' => 'firstPaint', 'data' => []],
+						'interactionToNextPaint' => ['metric' => 'Interaction to Next Paint (INP)', 'slug' => 'interactionToNextPaint', 'data' => []],
+						'largestContentfulPaint' => ['metric' => 'Largest Contentful Paint (LCP)', 'slug' => 'largestContentfulPaint', 'data' => []],
+					];
+					
+					foreach ($weekly_cwv_metrics as $week_m) {
+
+						// check if $week_m is an array.
+						// TODO: This is a hack to handle the fact that the data is sometimes nested in an array.
+						if (is_array($week_m) and isset($week_m[0])) {
+							$week_m = $week_m[0];
+						}
+
+						foreach ($week_m as $key => $value) {
+							$metric = str_replace('percentile.', '', $key);
+							$value = $value['75'] ?? 0;
+							$value = number_format($value, 2);
+							$unit = get_cwv_metric($metric);
+					
+							if (isset($rows[$metric])) {
+								$rows[$metric]['data'][] = [
+									'value' => "{$value} {$unit}",
+									'slug' => $rows[$metric]['slug']
+								];
+							}
+						}
+					}
+					
+					// Extracting rows into variables if needed
+					$cls_row = $rows['cumulativeLayoutShift']['data'];
+					array_unshift($cls_row, $rows['cumulativeLayoutShift']['metric']);
+					$fcp_row = $rows['firstContentfulPaint']['data'];
+					array_unshift($fcp_row, $rows['firstContentfulPaint']['metric']);
+					$fp_row = $rows['firstPaint']['data'];
+					array_unshift($fp_row, $rows['firstPaint']['metric']);
+					$inp_row = $rows['interactionToNextPaint']['data'];
+					array_unshift($inp_row, $rows['interactionToNextPaint']['metric']);
+					$lcp_row = $rows['largestContentfulPaint']['data'];
+					array_unshift($lcp_row, $rows['largestContentfulPaint']['metric']);
+
+					// Full metrics array.
+					$metric_rows = [ $cls_row, $fcp_row, $fp_row, $inp_row, $lcp_row ];
+
+					// heading
+					$this->create_p2_headings($content_dom, 'h2', $heading_text);
 
 					// create create_html_table.
-					$table = $this->create_html_table($content_dom, $metric_array, "{$metric_key}");
+					$table = new JsonToGutenbergTable(
+						$metric_rows, 
+						$week_headers, 
+						'table', 
+						[ $this, 'metric_value_color' ]
+					);
 
-					$caption = $content_dom->createElement('figcaption', $caption_text);
-					$caption->setAttribute('class', 'wp-element-caption');
-					$table->appendChild($caption);
+					$table->addCaption($caption_text);
+					$table = $table->getTableDomDocument();
 
-					// create comment.
-					$comment = $content_dom->createComment(" wp:table ");
-					$content_body->appendChild($comment);
-
-					// append table to dom.
-					$content_body->appendChild($table);
-
-					// create closing comment and append to dom.
-					$comment = $content_dom->createComment(" /wp:table ");
-					$content_body->appendChild($comment);
+					// for each table childNodes, append to $content_body.
+					foreach ($table->childNodes as $child) {
+						$importedNode = $content_dom->importNode($child, true);
+						$content_body->appendChild($importedNode);
+					}
+					
 					break;
 				case '404s':
 				case '500s':
 				case 'errors':
 				case 'warnings':
-					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
+					
+					// convert json to array.
+					$m = json_decode($metric, true);
+					$m = $m['data']['actor']['account']['nrql']['results'] ?? [];
 
 					// skip if $m is empty or not an array.
 					if (empty($m) || ! is_array($m)) {
 						continue;
 					}
 
+					// map filter to $m.
+					$m = array_map(function($item) {
+						// escape and sanitize
+						$metric = strip_tags($item['facet']);
+						$metric = stripslashes($metric);
+
+						return [
+							'facet' =>  $metric,
+							'count' => number_format($item['count'])
+						];
+					}, $m);
 					
 					$metric_names = [
 						'404s' => '404s',
@@ -156,30 +233,22 @@ class PostGenerator
 					];
 					
 					$heading_text = "Top {$metric_names[$metric_key]}";
-
 					$this->create_p2_headings($content_dom, 'h2', $heading_text);
-					$table = $this->create_table($content_dom, $m, "{$metric_key}", 'Count');
-					
-					$caption_text = "Counts and listing of most frequently occurring {$metric_names[$metric_key]}";
-					$caption = $content_dom->createElement('figcaption', $caption_text);
-					$caption->setAttribute('class', 'wp-element-caption');
-					$table->appendChild($caption);
 
-					// create comment.
-					$comment = $content_dom->createComment(" wp:table ");
-					$content_body->appendChild($comment);
+					$table = new JsonToGutenbergTable($m, [$heading_text, 'Count']);
+					$table->addCaption("Counts and listing of most frequently occurring {$metric_names[$metric_key]}");
+					$table = $table->getTableDomDocument();
 
-					// append table to dom.
-					$content_body->appendChild($table);
+					// for each table childNodes, append to $content_body.
+					foreach ($table->childNodes as $child) {
+						$importedNode = $content_dom->importNode($child, true);
+						$content_body->appendChild($importedNode);
+					}
 
-					// create closing comment and append to dom.
-					$comment = $content_dom->createComment(" /wp:table ");
-					$content_body->appendChild($comment);
 					break;
 				case 'error_count':
 				case 'warning_count':
 				case 'jetpack_pageviews':
-					// $m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
 
 					$metric_names = [
 						'error_count' => 'PHP Errors',
@@ -190,67 +259,175 @@ class PostGenerator
 					$caption_text = "The period of weekly metrics collection is Sunday to Saturday";
 					$heading_text = "{$metric_names[$metric_key]}";
 
-					$this->create_p2_headings($content_dom, 'h2', $heading_text);
-
 					// get postmeta with meta_key $metric_names[$metric_key]
 					$metric_meta_value = \get_post_meta( $metric->ID, $metric_key, true );
 					
 					// unserialize $metric_meta_value.
-					$metric_array = unserialize($metric_meta_value) ?? [];
+					$metrics_array = unserialize($metric_meta_value) ?? [];
 
-					// TODO: try to remove elements after key $this->week.
+					// if $metrics_array is empty, continue.
+					if (empty($metrics_array)) {
+						continue;
+					}
+
+					// get keys from $metrics_array for week numbers.
+					$week_array = array_keys($metrics_array);
+
+					// create pivot_columns.
+					$weeks_headers = array_map(function( $key ) {
+						return "Week {$key}";
+					}, $week_array);
+
+					// create $metric_names[$metric_key] row.
+					$metrics_array = array_map(function( $val ) {
+
+						if (is_numeric($val)) {
+							// thousand separator.
+							$val = number_format($val);
+						}
+
+						return $val;
+
+					}, $metrics_array );
+					
+					// create Change row.
+					$change_row_array = array_map(function($week) use ($metrics_array) {
+
+						$change = 0;
+
+						$previous_column = getPrevKey($week, $metrics_array);
+						$previous_column = $metrics_array[$previous_column] ?? null;
+
+						$current_column = $metrics_array[$week] ?? 0;
+
+						// check if previous $column exists.
+						if ($previous_column !== null) {
+			
+							if ( ! is_numeric($previous_column) ) {
+		
+								// try to remove units from $current_column and $previous_column.
+								$current_column = convert_back_to_original_value($current_column);
+								$previous_column = convert_back_to_original_value($previous_column);
+							}
+		
+							if (is_numeric($previous_column) && $previous_column != 0) {
+								$change = round((($current_column - $previous_column) / $previous_column) * 100, 2);
+							} else if (is_numeric($previous_column) && $previous_column == 0) {
+								$change = 100;
+							} 
+							else {
+								$change = 0;
+							}
+		
+						}
+
+						return "{$change}%";
+					}, $week_array);
+
+					// add item to beginning of $metrics_array.
+					array_unshift($metrics_array, $heading_text);
+					array_unshift($change_row_array, 'Change');
+					array_unshift($weeks_headers, ''); // first column is empty.
+
+					$metric_rows = [ $metrics_array, $change_row_array ];
+
+					// create heading.
+					$this->create_p2_headings($content_dom, 'h2', $heading_text);
 
 					// create create_html_table.
-					$table = $this->create_html_table($content_dom, $metric_array, "{$metric_names[$metric_key]}");
+					$table = new JsonToGutenbergTable($metric_rows, $weeks_headers);
+					$table->addCaption($caption_text);
+					$table = $table->getTableDomDocument();
 
-					// $table = $this->create_table($content_dom, $m, "", "Week {$this->week}", $metric_names[$metric_key]);
+					// for each table childNodes, append to $content_body.
+					foreach ($table->childNodes as $child) {
+						$importedNode = $content_dom->importNode($child, true);
+						$content_body->appendChild($importedNode);
+					}
 
-					$caption = $content_dom->createElement('figcaption', $caption_text);
-					$caption->setAttribute('class', 'wp-element-caption');
-					$table->appendChild($caption);
-
-					// create comment.
-					$comment = $content_dom->createComment(" wp:table ");
-					$content_body->appendChild($comment);
-
-					// append table to dom.
-					$content_body->appendChild($table);
-
-					// create closing comment and append to dom.
-					$comment = $content_dom->createComment(" /wp:table ");
-					$content_body->appendChild($comment);
 					break;
 				case 'transactions':
-					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
-					$table = $this->create_table($content_dom, $m, "Top {$metric_key}", 'Average Duration (ms)', 'transaction');
+
+					// convert json to array.
+					$m = json_decode($metric, true);
+					$m = $m['data']['actor']['account']['nrql']['results'] ?? [];
+
+					// skip if $m is empty or not an array.
+					if (empty($m) || ! is_array($m)) {
+						continue;
+					}
+
+					// map filter to $m.
+					$m = array_map(function($item) {
+						$formatted_value = $item['average.duration'] ?? 0;
+						$formatted_value = number_format($formatted_value, 2);
+
+						return [
+							'facet' => $item['facet'],
+							'average.duration' => $formatted_value
+						];
+					}, $m);
 
 					$this->create_p2_headings($content_dom, 'h2', 'Top Slow Transactions');
+					
+					$table = new JsonToGutenbergTable($m, ["Top {$metric_key}", 'Average Duration (ms)']);
+					$table->addCaption("Average duration of slow transactions");
+					$table = $table->getTableDomDocument();
 
-					// create comment.
-					$comment = $content_dom->createComment(" wp:table ");
-					$content_body->appendChild($comment);
+					// for each table childNodes, append to $content_body.
+					foreach ($table->childNodes as $child) {
+						$importedNode = $content_dom->importNode($child, true);
+						$content_body->appendChild($importedNode);
+					}
 
-					// append table to dom.
-					$content_body->appendChild($table);
-
-					// create closing comment and append to dom.
-					$comment = $content_dom->createComment(" /wp:table ");
-					$content_body->appendChild($comment);
 					break;
 				case 'cwv_chart':
-					$m = $metric['data']['actor']['account']['nrql']['results'] ?? [];
-					$table = $this->create_big_table($content_dom, $m, ['Page URL', 'CLS', 'INP', 'LCP', 'Page Views']);
+					// convert json to array.
+					$m = json_decode($metric, true);
+					$m = $m['data']['actor']['account']['nrql']['results'] ?? [];
 
-					// create comment.
-					$comment = $content_dom->createComment(" wp:table ");
-					$content_body->appendChild($comment);
+					// skip if $m is empty or not an array.
+					if (empty($m) || ! is_array($m)) {
+						continue;
+					}
 
-					// append table to dom.
-					$content_body->appendChild($table);
+					// create rows.
+					$m = array_map(function($item) {
+						$cls = $item['CLS']['75'] ?? 0;
+						$cls = number_format($cls, 2);
 
-					// create closing comment and append to dom.
-					$comment = $content_dom->createComment(" /wp:table ");
-					$content_body->appendChild($comment);
+						$inp = $item['INP']['75'] ?? 0;
+						$inp = number_format($inp, 2);
+
+						$lcp = $item['LCP']['75'] ?? 0;
+						$lcp = number_format($lcp, 2);
+
+						$page_views = $item['pageViews'] ?? 0;
+						$page_views = number_format($page_views);
+
+						return [
+							'Page URL' => $item['pageUrl'],
+							'CLS' => $cls,
+							'INP' => $inp,
+							'LCP' => $lcp,
+							'pageViews' => $page_views
+						];
+					}, $m);
+
+					// create heading.
+					$this->create_p2_headings($content_dom, 'h2', 'Core Web Vitals (CWV)');
+
+					// create table.
+					$table = new JsonToGutenbergTable($m, ['Page URL', 'CLS', 'INP', 'LCP', 'Page Views'], 'table' , [$this, 'metric_value_color']);
+					$table->addCaption("Core Web Vitals (CWV) for top pages");
+					$table = $table->getTableDomDocument();
+
+					// for each table childNodes, append to $content_body.
+					foreach ($table->childNodes as $child) {
+						$importedNode = $content_dom->importNode($child, true);
+						$content_body->appendChild($importedNode);
+					}
+
 					break;
 				default:
 					var_dump($metric);
@@ -298,223 +475,58 @@ class PostGenerator
 
 	}
 
-	// function to create a table from an array.
-	public function create_html_table(&$dom, $metric_arr, $metric_name = 'Errors' ) {
-		$table = $dom->createElement('table');
-		$thead = $dom->createElement('thead');
-		$tbody = $dom->createElement('tbody');
+	public function create_cwv_html($nr_metrics)
+	{
+		$html = file_get_contents(GUTENBERG_TPL . '/cwv.tpl.html');
 
-		// Create header row.
-		$tr = $dom->createElement('tr');
+		$dom = new DOMDocument();
+		$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
 
-		// empty header cell.
-		$th = $dom->createElement('th', '');
-		$tr->appendChild($th);
+		$metric = $nr_metrics[0] ?? [];
 
-		// for each column in $metric_arr[0], create a header column in the table.
-		foreach ($metric_arr as $week => $value) {
-			$th = $dom->createElement('th', "Week {$week}");
-			$tr->appendChild($th);
-		}
+		$this->replaceMetric($dom, $metric, 'CLS', 'cumulativeLayoutShift', 0.1, 0.25, '75', '');
 
-		$thead->appendChild($tr);
-		$table->appendChild($thead);
+		$this->replaceMetric($dom, $metric, 'INP', 'interactionToNextPaint', 0.2, 0.5, '75', 's');
 
-		if ( $metric_name != 'cwv_extended' && $metric_name != 'cwv_mobile_extended') {
-			// for each row in $metric_arr, create a row in the table.
-			$tr = $dom->createElement('tr');
+		$this->replaceMetric($dom, $metric, 'LCP', 'largestContentfulPaint', 2.5, 4, '75', 's');
 
-			// header cell.
-			$td = $dom->createElement('td', $metric_name);
-			$tr->appendChild($td);
-			foreach ($metric_arr as $weekval ) {
-
-				// if $weekval is numeric, format it with thousand seprator.
-				if (is_numeric($weekval)) {
-					$weekval = number_format($weekval);
-				}
-
-				$td = $dom->createElement('td', "{$weekval}");
-				$tr->appendChild($td);
-
-				$tbody->appendChild($tr);
-			}
-
-			$tr = $dom->createElement('tr');
-			$td = $dom->createElement('td', 'Change');
-			$tr->appendChild($td);
-
-			foreach ($metric_arr as $key => $val) {
-
-				// get previous item in array.
-				$previous_column = getPrevKey($key, $metric_arr);
-				$previous_column = $metric_arr[$previous_column] ?? null;
-				
-				// check if previous $column exists.
-				if ($previous_column !== null) {
-
-					if ( ! is_numeric($previous_column) ) {
-
-						// try to remove units from $val and $previous_column.
-						$val = $this->convert_back_to_original_value($val);
-						$previous_column = $this->convert_back_to_original_value($previous_column);
-					}
-
-					if (is_numeric($previous_column) && $previous_column != 0) {
-						$change = round((($val - $previous_column) / $previous_column) * 100, 2);
-					} else if (is_numeric($previous_column) && $previous_column == 0) {
-						$change = 100;
-					} 
-					else {
-						$change = 0;
-					}
-					
-					$td = $dom->createElement('td', "{$change}%");
-
-				} else {
-					$td = $dom->createElement('td', "0%");
-				}
-
-				$tr->appendChild($td);
-			}
-
-			// close change row.
-			$tbody->appendChild($tr);
-
-		} else {
-
-			// get last item from $metric_arr for headings.
-			$last_item = end($metric_arr);
-
-			// if is cwv_mobile_extended, get last item from $last_item again.
-			if ($metric_name == 'cwv_mobile_extended') {
-				$last_item = end($last_item);
-			}
-			
-			foreach ($last_item as $cwv_name => $v) { 
-				$tr = $dom->createElement('tr');
-
-				$fcwv_name = str_replace('percentile.', '', $cwv_name);
-
-				$td = $dom->createElement('td', $fcwv_name);
-				$tr->appendChild($td);
-
-				$cwv_unit = $this->format_cwv_metric($fcwv_name);
-
-				foreach ($metric_arr as $week => $cwv) {
-					if ($metric_name == 'cwv_mobile_extended') {
-						$cwv = end($cwv);
-					}
-
-					// if $cwv[$cwv_name] is numeric, format it to two decimal places.
-					$cwv_value = $cwv[$cwv_name]['75'] ?? 0;
-					if (is_numeric($cwv_value)) {
-						$cwv_value = number_format($cwv_value, 2);
-					}
-
-					$td = $dom->createElement('td', "{$cwv_value} {$cwv_unit}");
-
-					// add inline style to td.
-					$td->setAttribute('style', $this->metric_value_color($cwv_value, $fcwv_name));
-
-					$tr->appendChild($td);
-				}
-
-				$tbody->appendChild($tr);
-			}
-		}
-
-		$table->appendChild($tbody);
-
-		// Create figure element and append the table.
-		$figure = $dom->createElement('figure');
-		$figure->setAttribute('class', 'wp-block-table');
-		$figure->appendChild($table);
-
-		return $figure;
+		return $dom->documentElement;
 	}
 
-	public function create_table(&$dom, $nr_metrics, $header1 = 'Metric', $header2 = 'Count', $transaction_type = 'facet')
+	private function replaceMetric(&$dom, $metric, $metricName, $metricKey, $goodValue, $badValue, $percentile, $unit)
 	{
-		// Create a DOMDocument 2x2 table with a header row and append to $dom.
-		$table = $dom->createElement('table');
-		$thead = $dom->createElement('thead');
-		$tbody = $dom->createElement('tbody');
+		$m = $metric['percentile.' . $metricKey] ?? [];
 
-		// Create header row.
-		$tr = $dom->createElement('tr');
-		$th1 = $dom->createElement('th', $header1);
-		$th2 = $dom->createElement('th', $header2);
-		$tr->appendChild($th1);
-		$tr->appendChild($th2);
-
-		$thead->appendChild($tr);
-		$table->appendChild($thead);
-
-		// Append rows to table.
-		foreach ($nr_metrics as $metric) {
-			$tr = $dom->createElement('tr');
-
-			// sanitize and escape $metric['facet'] to prevent XSS.
-			if( isset($metric['facet']) ) {
-				$sanitized_metric = htmlspecialchars($metric['facet']);
-			}
-
-			// Format counts or durations to be human-readable.
-			$formatted_value = '';
-
-			switch ($transaction_type) {
-				case 'Errors':
-				case 'Warnings':
-					$metric_name = $transaction_type;
-					$formatted_value = is_numeric($metric['count']) ? number_format($metric['count']) : 0;
-
-					// create table cells and append to row.					
-					$td = $dom->createElement('td', $metric_name);
-					$tr->appendChild($td);
-					$td = $dom->createElement('td', "{$formatted_value}");
-					$tr->appendChild($td);
-					$tbody->appendChild($tr);
-					
-					$tr = $dom->createElement('tr');
-					$td = $dom->createElement('td', 'Change');
-					$tr->appendChild($td);
-					$td = $dom->createElement('td', "0%");
-					$tr->appendChild($td);
-					$tbody->appendChild($tr);
-					break;
-				case 'transaction':
-					$formatted_value = $metric['average.duration'] ?? 0;
-					$formatted_value = number_format($formatted_value, 2);
-
-					// create table cells and append to row.
-					$td = $dom->createElement('td', $sanitized_metric);
-					$tr->appendChild($td);
-					$td = $dom->createElement('td', "{$formatted_value}");
-					$tr->appendChild($td);
-					$tbody->appendChild($tr);
-					break;
-				default:
-					$formatted_value = is_numeric($metric['count']) ? number_format($metric['count']) : 0;
-
-					// create table cells and append to row.
-					$td = $dom->createElement('td', $sanitized_metric);
-					$tr->appendChild($td);
-					$td = $dom->createElement('td', "{$formatted_value}");
-					$tr->appendChild($td);
-					$tbody->appendChild($tr);
-					break;
-			}
+		if (empty($m)) {
+			return;
 		}
 
-		$table->appendChild($tbody);
+		$value = round($m[$percentile], 2);
+		$textColor = 'black';
+		$colorClass = 'luminous-vivid-amber';
 
-		// Create figure element and append the table.
-		$figure = $dom->createElement('figure');
-		$figure->setAttribute('class', 'wp-block-table');
-		$figure->appendChild($table);
+		if ($value <= $goodValue) {
+			$colorClass = 'vivid-green-cyan';
+		} else if ($value > $badValue) {
+			$colorClass = 'vivid-red';
+			$textColor = 'white';
+		}
 
-		return $figure;
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '}}', $value . $unit);
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '-text}}', 'has-' . $textColor . '-color has-text-color');
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '-text-color}}', $textColor);
+		dom_string_replace($dom, '{{' . strtolower($metricName) . '-color}}', $colorClass);
+	}
+
+	public function create_p2_headings(&$dom, $heading_type = 'h2',$heading_text = ''){
+		$body_el = $dom->getElementsByTagName('body')->item(0);
+		$comment = $dom->createComment(" wp:heading ");
+		$body_el->appendChild($comment);
+		$h2 = $dom->createElement($heading_type, $heading_text);
+		$h2->setAttribute('class', 'wp-block-heading');
+		$body_el->appendChild($h2);
+		$comment = $dom->createComment(" /wp:heading ");
+		$body_el->appendChild($comment);
 	}
 
 	public function metric_value_color($value, $metric_name = '')
@@ -523,14 +535,19 @@ class PostGenerator
 		$vivid_green_cyan = '#00D084';
 		$luminous_vivid_amber = '#FFC400';
 		$vivid_red = '#CF2E2E';
-
+	
 		// text color
 		$black = 'black';
 		$white = 'white';
-
+	
 		// default color.
 		$text_color = $black;
 
+		// strip unit and all spaces from $value.
+		$value = preg_replace('/\s+/', '', $value);
+		$value = preg_replace('/[a-zA-Z]+/', '', $value);
+		$value = (float) $value;
+	
 		switch ($metric_name) {
 			case 'CLS':
 			case 'cumulativeLayoutShift':
@@ -610,204 +627,4 @@ class PostGenerator
 		}
 		
 	}
-
-	public function format_cwv_metric( $metric )
-	{
-		// switch case for each metric value to include time unit.
-		switch ($metric) {
-			case 'cumulativeLayoutShift':
-				$unit = 's';
-				break;
-			case 'firstContentfulPaint':
-				$unit = 's';
-				break;
-			case 'firstInputDelay':
-				$unit = 'ms';
-				break;
-			case 'largestContentfulPaint':
-				$unit = 's';
-				break;
-			case 'firstPaint':
-				$unit = 's';
-				break;
-			case 'interactionToNextPaint':
-				$unit = 's';
-				break;
-			default:
-				$unit = '';
-				break;
-		}
-
-		return $unit;
-	}
-
-
-	public function create_big_table(&$dom, $nr_metrics, $headers = [], $transaction_type = 'facet')
-	{
-		$table = $dom->createElement('table');
-		$thead = $dom->createElement('thead');
-		$tbody = $dom->createElement('tbody');
-
-		// Create header row.
-		$tr = $dom->createElement('tr');
-
-		foreach ($headers as $header) {
-			$th = $dom->createElement('th', $header);
-			$tr->appendChild($th);
-		}
-		
-		$thead->appendChild($tr);
-		$table->appendChild($thead);
-
-		// Append rows to table.
-		foreach ($nr_metrics as $metric) {
-			$tr = $dom->createElement('tr');
-
-			// check if metric is an array.
-			if (! is_array($metric)){
-				return;
-			}
-
-			$previous_value = null;
-			$counter_loop = 1;
-			foreach ($metric as $key => $value) {
-
-				// if counter is greater than headers, continue.
-				if ($counter_loop > count($headers)) {
-					continue;
-				}
-
-				// return if value is the same as the previous value.
-				if ($value === $previous_value) {
-					continue;
-				} else {
-					$previous_value = $value;
-				}
-
-				// if value is array with one item, get that item.
-				if (is_array($value) && count($value) === 1) {
-					// get first item in array, regardless of key.
-					$value = array_values($value)[0];
-				}
-
-				// if value is decimal number, format it.
-				if (is_numeric($value) && strpos("{$value}", '.') !== false) {
-					$value = number_format($value, 2);
-				}
-
-				// else if value is number, format it with thousand seprator.
-				elseif (is_numeric($value)) {
-					$value = number_format($value);
-				}
-	
-				// Create table cells and append to row.
-				$td = $dom->createElement('td', "{$value}");
-
-				$inline_style = $this->metric_value_color($value, $key);
-
-				$td->setAttribute('style', $inline_style);
-
-				$tr->appendChild($td);
-				$counter_loop++;
-			}
-
-			$tbody->appendChild($tr);
-
-		}
-
-		$table->appendChild($tbody);
-
-		// Create figure element and append the table.
-		$figure = $dom->createElement('figure');
-		$figure->setAttribute('class', 'wp-block-table');
-		$figure->appendChild($table);
-
-		return $figure;
-	}
-
-	public function create_cwv_html($nr_metrics)
-	{
-		$html = file_get_contents(GUTENBERG_TPL . '/cwv.tpl.html');
-
-		$dom = new DOMDocument();
-		$dom->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
-
-		$metric = $nr_metrics[0] ?? [];
-
-		$this->replaceMetric($dom, $metric, 'CLS', 'cumulativeLayoutShift', 0.1, 0.25, '75', '');
-
-		$this->replaceMetric($dom, $metric, 'INP', 'interactionToNextPaint', 0.2, 0.5, '75', 's');
-
-		$this->replaceMetric($dom, $metric, 'LCP', 'largestContentfulPaint', 2.5, 4, '75', 's');
-
-		return $dom->documentElement;
-	}
-
-	private function replaceMetric(&$dom, $metric, $metricName, $metricKey, $goodValue, $badValue, $percentile, $unit)
-	{
-		$m = $metric['percentile.' . $metricKey] ?? [];
-
-		if (empty($m)) {
-			return;
-		}
-
-		$value = round($m[$percentile], 2);
-		$textColor = 'black';
-		$colorClass = 'luminous-vivid-amber';
-
-		if ($value <= $goodValue) {
-			$colorClass = 'vivid-green-cyan';
-		} else if ($value > $badValue) {
-			$colorClass = 'vivid-red';
-			$textColor = 'white';
-		}
-
-		dom_string_replace($dom, '{{' . strtolower($metricName) . '}}', $value . $unit);
-		dom_string_replace($dom, '{{' . strtolower($metricName) . '-text}}', 'has-' . $textColor . '-color has-text-color');
-		dom_string_replace($dom, '{{' . strtolower($metricName) . '-text-color}}', $textColor);
-		dom_string_replace($dom, '{{' . strtolower($metricName) . '-color}}', $colorClass);
-	}
-
-	public function create_p2_headings(&$dom, $heading_type = 'h2',$heading_text = ''){
-		$body_el = $dom->getElementsByTagName('body')->item(0);
-		$comment = $dom->createComment(" wp:heading ");
-		$body_el->appendChild($comment);
-		$h2 = $dom->createElement($heading_type, $heading_text);
-		$h2->setAttribute('class', 'wp-block-heading');
-		$body_el->appendChild($h2);
-		$comment = $dom->createComment(" /wp:heading ");
-		$body_el->appendChild($comment);
-	}
-
-	public function convert_back_to_original_value( $val ){
-		// extract unit from $val and $previous_column. case insensitive.
-		$val_unit = preg_match('/[a-zA-Z]+/', $val, $matches) ? $matches[0] : '';
-		$val_unit = strtolower($val_unit);
-
-		// convert to float.
-		$val = str_replace(['s', 'ms', 'm','k', 'b', 't'], '', strtolower($val));
-		$val = (float) $val;
-
-		// based on unit, try to convert value to float.
-		switch ($val_unit) {
-			case 'm':
-				$val = (float) $val * 1000000;
-				break;
-			case 'k':
-				$val = (float) $val * 1000;
-				break;
-			case 'b':
-				$val = (float) $val * 1000000000;
-				break;
-			case 't':
-				$val = (float) $val * 1000000000000;
-				break;
-			default:
-				$val = (float) $val;
-				break;
-		}
-
-		return $val;
-	}
-
 }

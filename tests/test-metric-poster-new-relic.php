@@ -40,6 +40,7 @@ class MetricPosterTestNewRelic extends \WP_UnitTestCase
 
         // mock $body = $response->getBody()->getContents() response.
         $mock_body = '{"data":{"actor":{"account":{"id":123456},"applications":{"summary":{"nrql":{"results":[{"count":0,"facet":{"error_type":"error"},"rate":0,"sum":0,"timeslice":1609459200},{"count":0,"facet":{"error_type":"warning"},"rate":0,"sum":0,"timeslice":1609459200}]},"since":1609459200,"timeseries":[{"results":[{"count":0,"facet":{"error_type":"error"},"rate":0,"sum":0,"timeslice":1609459200},{"count":0,"facet":{"error_type":"warning"},"rate":0,"sum":0,"timeslice":1609459200}]}]}}}},"errors":[]}';
+        // $mock_body = '{"data":{"actor":{"account":{"nrql":{"results":[{"count":0}]}}}}}';
 
         // Create a mock and queue two responses.
         $mock = new MockHandler([
@@ -57,7 +58,8 @@ class MetricPosterTestNewRelic extends \WP_UnitTestCase
 
     public function test_get_results()
     {
-        $this->nr_metrics->get_results();
-        $this->assertIsArray($this->nr_metrics->get_results());
+        // TODO: needs db posts to be created.
+        $results = $this->nr_metrics->get_results();
+        $this->assertIsArray($results);
     }
 }

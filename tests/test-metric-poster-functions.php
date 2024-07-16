@@ -50,6 +50,7 @@ class MetricPosterTestFunctions extends \WP_UnitTestCase
     function test_get_prev_week_number()
     {
         // assert return value is > 0 and < 53.
+        // Tests for the first week of the year.
         $this->assertGreaterThan(0, get_prev_week_number());
         $this->assertLessThan(53, get_prev_week_number());
     }
@@ -60,11 +61,14 @@ class MetricPosterTestFunctions extends \WP_UnitTestCase
             'key1' => 'value1',
             'key2' => 'value2',
             'key3' => 'value3',
+            4 => 'value4',
+            5 => 'value5',
         );
 
         $this->assertEquals('key2', getPrevKey('key3', $hash));
         $this->assertEquals('key1', getPrevKey('key2', $hash));
         $this->assertEquals(false, getPrevKey('key1', $hash));
+        $this->assertEquals(4, getPrevKey(5, $hash));
     }
 
     function test_number_format_short()
@@ -79,6 +83,7 @@ class MetricPosterTestFunctions extends \WP_UnitTestCase
 
     function test_get_correct_year()
     {
+        // test for week 1 of 2021.
         $this->assertEquals('2022', get_correct_year( 52, 2023));
     }
 }
