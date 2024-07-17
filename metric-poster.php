@@ -4,7 +4,7 @@
  * Plugin Name: Metric Poster
  * Plugin URI: https://github.com/Automattic/metrics-poster
  * Description: A plugin to generate a post from a template and post it to a P2 site.
- * Version: 1.0.27
+ * Version: 1.0.28
  */
 
 declare(strict_types=1);
@@ -57,4 +57,14 @@ define('DEV_ENV', $_ENV['ENV'] ?? 'dev');
 
 	$cron = new CronSetup();
 	$cron->run();
+
+	\add_shortcode( 'metric-poster', function () {
+		$template = __DIR__ . '/src/UI/json-table-converter.php';
+		\ob_start();
+		include $template;
+		return \ob_get_clean();
+	});
+
 });
+
+

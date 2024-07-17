@@ -155,7 +155,7 @@ class JsonToGutenbergTable {
      * @param string $caption_text Caption text.
      * @return void
      */
-    public function addCaption( string $caption_text ) : void {
+    public function addCaption( string $caption_text = '' ) : void {
 
         $figure = $this->table_html->createElement('figure');
 		$figure->setAttribute('class', 'wp-block-table');
@@ -165,9 +165,10 @@ class JsonToGutenbergTable {
         $table = $this->table_html->getElementsByTagName('table')[0];
         $figure->appendChild($table);
 
-        $caption_element = $this->table_html->createElement('figcaption', $caption_text);
-        $caption_element->setAttribute('class', 'wp-element-caption');
-        $figure->appendChild($caption_element);
+        if ( ! empty($caption_text) ) {
+            $figcaption = $this->table_html->createElement('figcaption', $caption_text);
+            $figure->appendChild($figcaption);
+        }
     }
 
     /**
@@ -196,6 +197,7 @@ class JsonToGutenbergTable {
             $this->has_comments = true;
         }
 
+        // return preg_replace('~<(?:!DOCTYPE|/?(?:html|body))[^>]*>\s*~i', '', $this->table_html->saveHTML());
         return $this->table_html->saveHTML();
     }
 }
