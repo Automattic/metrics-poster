@@ -372,13 +372,28 @@ class SettingsPage
                         $metrics[] = 'warnings';
                         break;
                     case 'cwv':
+
+                        if (empty($app_info->get_nr_browser_guid())) {
+                            continue 2;
+                        }
+
                         $metrics[] = 'cwv';
                         $metrics[] = 'cwv_chart';
                         break;
                     case 'cwv_extended':
+
+                        if (empty($app_info->get_nr_browser_guid())) {
+                            continue 2;
+                        }
+
                         $metrics[] = 'cwv_extended';
                         break;
                     case 'cwv_mobile_extended':
+
+                        if (empty($app_info->get_nr_browser_guid())) {
+                            continue 2;
+                        }
+
                         $metrics[] = 'cwv_mobile_extended';
                         break;
                     default:
