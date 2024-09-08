@@ -486,6 +486,9 @@ class SettingsPage
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="transactions" <?php \checked(1, true, true); ?> />
                                 <label for="metric_poster_options[metrics][]">Top Slow Transactions</label>
 
+                                <!-- <input type="checkbox" name="metric_poster_options[metrics][]" value="slow_api_transactions" <?php \checked(1, true, true); ?> />
+                                <label for="metric_poster_options[metrics][]">Top Slow API Transactions</label> -->
+
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv" <?php \checked(1, true, true); ?> />
                                 <label for="metric_poster_options[metrics][]">CWV Chart</label>
 
@@ -500,6 +503,24 @@ class SettingsPage
 
                                 <input type="checkbox" name="metric_poster_options[metrics][]" value="500s" <?php \checked(1, false, false); ?> />
                                 <label for="metric_poster_options[metrics][]">500 Errors</label>
+
+                                <!-- checkboxes for slow_queries, response_time, throughput, apdex -->
+
+                                <input type="checkbox" name="metric_poster_options[metrics][]" value="slow_queries" <?php \checked(1, false, false); ?> />
+                                <label for="metric_poster_options[metrics][]">Slow Queries</label>
+
+                                <input type="checkbox" name="metric_poster_options[metrics][]" value="response_time" <?php \checked(1, false, false); ?> />
+                                <label for="metric_poster_options[metrics][]">Response Time</label>
+
+                                <input type="checkbox" name="metric_poster_options[metrics][]" value="throughput" <?php \checked(1, false, false); ?> />
+                                <label for="metric_poster_options[metrics][]">Throughput</label>
+
+                                <input type="checkbox" name="metric_poster_options[metrics][]" value="apdex" <?php \checked(1, false, false); ?> />
+                                <label for="metric_poster_options[metrics][]">Apdex</label>
+
+                                <input type="checkbox" name="metric_poster_options[metrics][]" value="top_user_agents" <?php \checked(1, false, false); ?> />
+                                <label for="metric_poster_options[metrics][]">Top UAs</label>
+
                             </td>
 
                             <script>

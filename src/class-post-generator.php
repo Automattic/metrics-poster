@@ -222,6 +222,7 @@ class PostGenerator {
 				case '500s':
 				case 'errors':
 				case 'warnings':
+				case 'top_user_agents':
 					// convert json to array.
 					$m = json_decode( $metric, true );
 					$m = $m['data']['actor']['account']['nrql']['results'] ?? array();
@@ -251,6 +252,7 @@ class PostGenerator {
 						'500s'     => '500s',
 						'errors'   => 'Errors',
 						'warnings' => 'Warnings',
+						'top_user_agents' => 'Top User Agents',
 					);
 					
 					$heading_text = "Top {$metric_names[$metric_key]}";
@@ -271,10 +273,19 @@ class PostGenerator {
 				case 'error_count':
 				case 'warning_count':
 				case 'jetpack_pageviews':
+				case 'slow_queries':
+				case 'response_time':
+				case 'throughput':
+				case 'apdex':
+
 					$metric_names = array(
 						'error_count'       => 'PHP Errors',
 						'warning_count'     => 'PHP Warnings',
 						'jetpack_pageviews' => 'Jetpack Page Views',
+						'slow_queries'      => 'Slow Queries',
+						'response_time'     => 'Average Response Time p75',
+						'throughput'        => 'Throughput',
+						'apdex'             => 'Apdex',
 					);
 
 					$caption_text = 'The period of weekly metrics collection is Sunday to Saturday';
@@ -306,9 +317,15 @@ class PostGenerator {
 					$metrics_array = array_map(
 						function ( $val ) {
 
-							if ( is_numeric( $val ) ) {
+							// if is number and not float.
+							if ( is_numeric( $val ) && ! is_float( $val ) ) {
 								// thousand separator.
 								$val = number_format( $val );
+							}
+
+							// if is float, round to 3 decimal places.
+							if ( is_float( $val ) ) {
+								$val = number_format( $val, 3 );
 							}
 
 							return $val;
@@ -338,8 +355,6 @@ class PostGenerator {
 		
 								if ( is_numeric( $previous_column ) && $previous_column != 0 ) {
 									$change = round( ( ( $current_column - $previous_column ) / $previous_column ) * 100, 2 );
-								} elseif ( is_numeric( $previous_column ) && $previous_column == 0 ) {
-									$change = 100;
 								} else {
 									$change = 0;
 								}
@@ -350,7 +365,7 @@ class PostGenerator {
 						$week_array
 					);
 
-					// add item to beginning of $metrics_array.
+					// add label cell to beginning of each row.
 					array_unshift( $metrics_array, $heading_text );
 					array_unshift( $change_row_array, 'Change' );
 					array_unshift( $weeks_headers, '' ); // first column is empty.
@@ -372,6 +387,7 @@ class PostGenerator {
 
 					break;
 				case 'transactions':
+				case 'slow_api_transactions':
 					// convert json to array.
 					$m = json_decode( $metric, true );
 					$m = $m['data']['actor']['account']['nrql']['results'] ?? array();
@@ -379,6 +395,12 @@ class PostGenerator {
 					// skip if $m is empty or not an array.
 					if ( empty( $m ) || ! is_array( $m ) ) {
 						continue;
+					}
+
+					$header_label = 'Top Slow Transactions';
+
+					if ( 'slow_api_transactions' === $metric_key ) {
+						$header_label = 'Top Slow Endpoint Transactions';
 					}
 
 					// map filter to $m.
@@ -395,7 +417,7 @@ class PostGenerator {
 						$m
 					);
 
-					$this->create_p2_headings( $content_dom, 'h2', 'Top Slow Transactions' );
+					$this->create_p2_headings( $content_dom, 'h2', $header_label );
 					
 					$caption_text = 'Average duration of slow transactions';
 
@@ -559,6 +581,12 @@ class PostGenerator {
 	}
 
 	public function metric_value_color( $value, $metric_name = '' ) {
+
+		// null check $value
+		if ( is_null( $value ) ) {
+			return '';
+		}
+
 		// colors
 		$vivid_green_cyan     = '#00D084';
 		$luminous_vivid_amber = '#FFC400';
@@ -572,8 +600,11 @@ class PostGenerator {
 		$text_color = $black;
 
 		// strip unit and all spaces from $value.
-		$value = preg_replace( '/\s+/', '', $value );
-		$value = preg_replace( '/[a-zA-Z]+/', '', $value );
+		if ( is_string( $value ) ) {
+			$value = preg_replace( '/\s+/', '', $value );
+			$value = preg_replace( '/[a-zA-Z]+/', '', $value );
+		}
+
 		$value = (float) $value;
 	
 		switch ( $metric_name ) {

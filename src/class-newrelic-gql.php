@@ -93,6 +93,12 @@ class NewRelicGQL
 			'cwv_chart' => 'get_cwv_by_pageview_chart',
 			'jetpack_pageviews' => 'get_jetpack_pageviews',
 			'transactions' => 'get_top_slow_transactions',
+			'slow_queries' => 'get_slow_queries',
+			'response_time' => 'get_response_time',
+			'throughput' => 'get_throughput',
+			'apdex' => 'get_apdex',
+			'slow_api_transactions' => 'get_top_slow_api_transactions',
+			'top_user_agents' => 'get_top_user_agents',
 		];
 
 		foreach ($this->metrics as $metric) {
@@ -413,15 +419,15 @@ class NewRelicGQL
 
 	public function get_top_slow_transactions()
 	{
-		$facet_query = $this->facet_group ? "FACET request.uri" : "";
+		$facet_query = $this->facet_group ? "FACET `request.uri`" : "";
 
-		$transactionTypesQuery = $this->buildTransactionTypesQuery();
+		// $transactionTypesQuery = $this->buildTransactionTypesQuery();
 
 		$query = <<<QUERY
     {
         actor {
             account(id: $this->clientid) {
-                nrql(query: "FROM Transaction SELECT average(duration) WHERE entityGuid = '{$this->app_guid}' AND ($transactionTypesQuery) SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' $facet_query") {
+                nrql(query: "FROM Transaction SELECT average(duration) WHERE entityGuid = '{$this->app_guid}' SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' $facet_query LIMIT 15") {
                     results
                 }
             }
@@ -432,9 +438,9 @@ class NewRelicGQL
 		return $this->nrqlQuery($query);
 	}
 
-	private function buildTransactionTypesQuery(): string
+	private function buildTransactionTypesQuery( $like = "" ): string
 	{
-		$transactionTypesData = $this->get_top_transaction_types();
+		$transactionTypesData = $this->get_top_transaction_types( $like );
 
 		$transactionTypesData = json_decode($transactionTypesData, true);
 
@@ -453,10 +459,21 @@ class NewRelicGQL
 	}
 
 	// return type array.
-	public function get_top_transaction_types(): string
+	public function get_top_transaction_types( $like = "" ): string
 	{
 
 		$facet_query = "";
+		$like_query = "";
+
+		// if $like is array, loop through and build query.
+		if ( is_array( $like ) ) {
+			$like_query = "AND (";
+			foreach ($like as $like_item) {
+				$like_query .= "name LIKE '%$like_item%' OR ";
+			}
+			$like_query = rtrim($like_query, " OR ");
+			$like_query .= ")";
+		}
 
 		if ($this->facet_group) {
 			$facet_query = "FACET name";
@@ -466,13 +483,129 @@ class NewRelicGQL
 		{
 			actor {
 				account(id: $this->clientid) {
-					nrql(query: "FROM Transaction SELECT sum(totalTime) WHERE entityGuid = '{$this->app_guid}' AND name NOT LIKE 'WebTransaction/StatusCode/%' SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' $facet_query LIMIT 5") {
+					nrql(query: "FROM Transaction SELECT sum(totalTime) WHERE entityGuid = '{$this->app_guid}' AND name NOT LIKE 'WebTransaction/StatusCode/%' {$like_query} SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' $facet_query LIMIT 5") {
 						results
 					}
 				}
 			  }
 		}
 		QUERY;
+
+		return $this->nrqlQuery($query);
+	}
+
+	public function get_slow_queries()
+	{
+		// get number of slow queries > 1s.
+		$query = <<<QUERY
+		{
+			actor {
+				account(id: $this->clientid) {
+					nrql(query: "FROM Transaction SELECT count(*) WHERE entityGuid = '{$this->app_guid}' AND databaseDuration > 1 SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
+						results
+					}
+				}
+			}
+		}
+		QUERY;
+
+		$mpost_id = $this->update_metric_posts('slow_queries', $query);
+		return \get_post($mpost_id);
+	}
+
+	public function get_response_time()
+	{
+		$query = <<<QUERY
+		{
+			actor {
+				account(id: $this->clientid) {
+					nrql(query: "FROM Transaction SELECT percentile(duration, 75) WHERE entityGuid = '{$this->app_guid}' SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
+						results
+					}
+				}
+			}
+		}
+		QUERY;
+
+		// return $this->nrqlQuery($query);
+		$mpost_id = $this->update_metric_posts('response_time', $query);
+		return \get_post($mpost_id);
+	}
+
+	public function get_throughput()
+	{
+		$query = <<<QUERY
+		{
+			actor {
+				account(id: $this->clientid) {
+					nrql(query: "FROM Transaction SELECT count(*) WHERE entityGuid = '{$this->app_guid}' SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
+						results
+					}
+				}
+			}
+		}
+		QUERY;
+
+		// return $this->nrqlQuery($query);
+		$mpost_id = $this->update_metric_posts('throughput', $query);
+		return \get_post($mpost_id);
+	}
+
+	public function get_apdex()
+	{
+		$query = <<<QUERY
+		{
+			actor {
+				account(id: $this->clientid) {
+					nrql(query: "FROM Transaction SELECT apdex(duration, t: 0.5) WHERE entityGuid = '{$this->app_guid}' SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}'") {
+						results
+					}
+				}
+			}
+		}
+		QUERY;
+
+		// return $this->nrqlQuery($query);
+		$mpost_id = $this->update_metric_posts('apdex', $query);
+		return \get_post($mpost_id);
+	}
+
+	public function get_top_slow_api_transactions()
+	{
+		$facet_query = $this->facet_group ? "FACET `request.uri`" : "";
+
+		$transactionTypesQuery = $this->buildTransactionTypesQuery( ['GraphQL','ajax'] );
+
+		$query = <<<QUERY
+	{
+		actor {
+			account(id: $this->clientid) {
+				nrql(query: "FROM Transaction SELECT average(duration) WHERE entityGuid = '{$this->app_guid}' AND ($transactionTypesQuery) SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' $facet_query LIMIT 15") {
+					results
+				}
+			}
+		}
+	}
+	QUERY;
+
+		return $this->nrqlQuery($query);
+	}
+
+	public function get_top_user_agents()
+	{
+		$facet_query = $this->facet_group ? "FACET HTTP_USER_AGENT" : "";
+
+		$query = <<<QUERY
+	{
+		actor {
+			account(id: $this->clientid) {
+				nrql(query: "FROM Transaction SELECT count(*) WHERE entityGuid = '{$this->app_guid}' SINCE '{$this->date_range["week_start_system"]}' UNTIL '{$this->date_range["week_end_system"]}' $facet_query LIMIT 15") {
+					results
+				}
+			}
+		}
+	}
+	QUERY;
 
 		return $this->nrqlQuery($query);
 	}
@@ -547,6 +680,18 @@ class NewRelicGQL
 			case 'cwv_mobile_extended':
 				// get results from query results.
 				$query_results = $query_results['data']['actor']['account']['nrql']['results'][0];
+				break;
+			case 'apdex':
+				// get results from query results.
+				$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['score'];
+				break;
+			case 'slow_queries':
+			case 'throughput':
+				$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['count'] ?? 0;
+				break;
+			case 'response_time':
+				// get results from query results.
+				$query_results = $query_results['data']['actor']['account']['nrql']['results'][0]['percentile.duration']['75'];
 				break;
 			default:
 				$query_results = $query_results['data']['actor']['account']['nrql']['results'];
