@@ -248,10 +248,10 @@ class PostGenerator {
 					);
 					
 					$metric_names = array(
-						'404s'     => '404s',
-						'500s'     => '500s',
-						'errors'   => 'Errors',
-						'warnings' => 'Warnings',
+						'404s'            => '404s',
+						'500s'            => '500s',
+						'errors'          => 'Errors',
+						'warnings'        => 'Warnings',
 						'top_user_agents' => 'Top User Agents',
 					);
 					
@@ -259,7 +259,7 @@ class PostGenerator {
 					$this->create_p2_headings( $content_dom, 'h2', $heading_text );
 
 					$caption_text = "Counts and listing of most frequently occurring {$metric_names[$metric_key]}";
-					$table = new JsonToGutenbergTable( $m, array( $heading_text, 'Count' ), 'table', array( $this, 'metric_value_color' ), $caption_text );
+					$table        = new JsonToGutenbergTable( $m, array( $heading_text, 'Count' ), 'table', array( $this, 'metric_value_color' ), $caption_text );
 					
 					$table = $table->getTableDomDocument();
 
@@ -277,7 +277,6 @@ class PostGenerator {
 				case 'response_time':
 				case 'throughput':
 				case 'apdex':
-
 					$metric_names = array(
 						'error_count'       => 'PHP Errors',
 						'warning_count'     => 'PHP Warnings',
@@ -342,19 +341,18 @@ class PostGenerator {
 							$previous_column = getPrevKey( $week, $metrics_array );
 							$previous_column = $metrics_array[ $previous_column ] ?? null;
 
-							$current_column = $metrics_array[ $week ] ?? 0;
+ 							$current_column = $metrics_array[ $week ] ?? 0;
 
 							// check if previous $column exists.
 							if ( $previous_column !== null ) {
-								if ( ! is_numeric( $previous_column ) ) {
+								// try to remove units from $current_column and $previous_column.
+								$current_column  = convert_back_to_original_value( $current_column );
+								$previous_column = convert_back_to_original_value( $previous_column );
 		
-									// try to remove units from $current_column and $previous_column.
-									$current_column  = convert_back_to_original_value( $current_column );
-									$previous_column = convert_back_to_original_value( $previous_column );
-								}
-		
-								if ( is_numeric( $previous_column ) && $previous_column != 0 ) {
+								if ( is_numeric( $previous_column ) && 0 != $previous_column ) {
 									$change = round( ( ( $current_column - $previous_column ) / $previous_column ) * 100, 2 );
+								} elseif ( is_numeric( $previous_column ) && 0 == $previous_column && 0 < $current_column ) {
+									$change = round( $current_column * 100, 2 );
 								} else {
 									$change = 0;
 								}
@@ -421,7 +419,7 @@ class PostGenerator {
 					
 					$caption_text = 'Average duration of slow transactions';
 
-					$table = new JsonToGutenbergTable( $m, ["Top {$metric_key}", 'Average Duration (ms)'], 'table', [ $this, 'metric_value_color' ], $caption_text );
+					$table = new JsonToGutenbergTable( $m, array( "Top {$metric_key}", 'Average Duration (ms)' ), 'table', array( $this, 'metric_value_color' ), $caption_text );
 					$table = $table->getTableDomDocument();
 
 					// for each table childNodes, append to $content_body.
