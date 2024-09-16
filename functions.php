@@ -111,6 +111,9 @@ function convert_back_to_original_value( $val ): float {
 
 	// convert to float.
 	$val = str_replace( array( 's', 'ms', 'm', 'k', 'b', 't' ), '', strtolower( $val ) );
+
+	// convert number string with comma to float.
+	$val = str_replace( ',', '', $val );
 	$val = (float) $val;
 
 	// based on unit, try to convert value to float.

@@ -145,6 +145,9 @@ class JsonToGutenbergTable {
 					$slug  = $val['slug'] ?? '';
 				}
 
+				// escape html entities.
+				$value = htmlspecialchars( $value );
+
 				$td = $this->table_html->createElement( 'td', "{$value}" );
 
 				// add inline style to cell.
