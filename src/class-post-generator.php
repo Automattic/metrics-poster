@@ -419,7 +419,7 @@ class PostGenerator {
 					
 					$caption_text = 'Average duration of slow transactions';
 
-					$table = new JsonToGutenbergTable( $m, array( "Top {$metric_key}", 'Average Duration (ms)' ), 'table', array( $this, 'metric_value_color' ), $caption_text );
+					$table = new JsonToGutenbergTable( $m, array( "Top {$metric_key}", 'Average Duration' ), 'table', array( $this, 'metric_value_color' ), $caption_text );
 					$table = $table->getTableDomDocument();
 
 					// for each table childNodes, append to $content_body.
