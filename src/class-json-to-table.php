@@ -136,8 +136,8 @@ class JsonToGutenbergTable {
 		foreach ( $data as $row ) {
 			$tr = $this->table_html->createElement( 'tr' );
 			foreach ( $row as $key => $val ) {
-				$value = $val;
-				$slug  = $key;
+				$value = $val ?? '';
+				$slug  = $key ?? '';
 
 				// check if value is an array, then extract value.
 				if ( is_array( $val ) ) {
