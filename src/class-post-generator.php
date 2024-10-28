@@ -319,7 +319,7 @@ class PostGenerator {
 							// if is number and not float.
 							if ( is_numeric( $val ) && ! is_float( $val ) ) {
 								// thousand separator.
-								$val = number_format( $val );
+								$val = number_format( (float) $val );
 							}
 
 							// if is float, round to 3 decimal places.
