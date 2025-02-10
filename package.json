@@ -6,7 +6,16 @@
   "directories": {
     "test": "tests"
   },
-  "files": [ "vendor", "gutenberg-templates", "*.php", ".env.example", "composer.json", "composer.lock", "readme.md", "src" ],
+  "files": [
+    "vendor",
+    "gutenberg-templates",
+    "*.php",
+    ".env.example",
+    "composer.json",
+    "composer.lock",
+    "readme.md",
+    "src"
+  ],
   "scripts": {
     "plugin-zip": "wp-scripts plugin-zip"
   },
@@ -28,6 +37,6 @@
   },
   "homepage": "https://github.com/Automattic/metrics-poster#readme",
   "devDependencies": {
-    "@wordpress/scripts": "^26.17.0"
+    "@wordpress/scripts": "^30.10.0"
   }
 }
