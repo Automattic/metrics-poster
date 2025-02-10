@@ -1,6 +1,6 @@
 {
   "name": "metric-poster",
-  "version": "1.0.0",
+  "version": "1.0.36",
   "description": "⚠️ This repository is a work in progress and is not yet ready for production use. Use at your own risk. Contributions are welcome and encouraged! ⚠️",
   "main": "index.js",
   "directories": {
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elysium001/metrics-poster.git"
+    "url": "git+https://github.com/Automattic/metrics-poster.git"
   },
   "keywords": [
     "php",
@@ -24,9 +24,9 @@
   "author": "Omar Serrano",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/elysium001/metrics-poster/issues"
+    "url": "https://github.com/Automattic/metrics-poster/issues"
   },
-  "homepage": "https://github.com/elysium001/metrics-poster#readme",
+  "homepage": "https://github.com/Automattic/metrics-poster#readme",
   "devDependencies": {
     "@wordpress/scripts": "^26.17.0"
   }
