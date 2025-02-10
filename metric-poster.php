@@ -20,7 +20,6 @@ use Dotenv\Dotenv;
 use MetricPoster\UI\SettingsPage;
 use MetricPoster\CronSetup;
 
-require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/vendor/autoload.php';
 
 // Define global constants.
@@ -65,5 +64,3 @@ if ( \wp_get_environment_type() === 'local' ) {
 	});
 
 });
-
-
