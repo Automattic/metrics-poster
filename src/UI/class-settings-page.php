@@ -474,54 +474,104 @@ class SettingsPage
                                     <button type="button" id="check_all">Check All</button>
                                 </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="jetpack_pageviews" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">JP Page Views</label>
+                                <div class="checkbox-column">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="jetpack_pageviews" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">JP Page Views</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="errors" <?php \checked(1, true, true); ?> />
-                                <label for="metric_poster_options[metrics][]">PHP Errors</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="errors" <?php \checked(1, true, true); ?> />
+                                        <label for="metric_poster_options[metrics][]">PHP Errors</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="warnings" <?php \checked(1, true, true); ?> />
-                                <label for="metric_poster_options[metrics][]">PHP Warnings</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="warnings" <?php \checked(1, true, true); ?> />
+                                        <label for="metric_poster_options[metrics][]">PHP Warnings</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="transactions" <?php \checked(1, true, true); ?> />
-                                <label for="metric_poster_options[metrics][]">Top Slow Transactions</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="transactions" <?php \checked(1, true, true); ?> />
+                                        <label for="metric_poster_options[metrics][]">Top Slow Transactions</label>
+                                    </div>
+                                </div>
 
-                                <!-- <input type="checkbox" name="metric_poster_options[metrics][]" value="slow_api_transactions" <?php \checked(1, true, true); ?> />
-                                <label for="metric_poster_options[metrics][]">Top Slow API Transactions</label> -->
+                                <div class="checkbox-column">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv" <?php \checked(1, true, true); ?> />
+                                        <label for="metric_poster_options[metrics][]">CWV Chart</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv" <?php \checked(1, true, true); ?> />
-                                <label for="metric_poster_options[metrics][]">CWV Chart</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv_extended" <?php \checked(1, false, true); ?> />
+                                        <label for="metric_poster_options[metrics][]">CWV Extended</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv_extended" <?php \checked(1, false, true); ?> />
-                                <label for="metric_poster_options[metrics][]">CWV Extended</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv_mobile_extended" <?php \checked(1, false, true); ?> />
+                                        <label for="metric_poster_options[metrics][]">CWV Mobile Extended</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="cwv_mobile_extended" <?php \checked(1, false, true); ?> />
-                                <label for="metric_poster_options[metrics][]">CWV Mobile Extended</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="404s" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">404 Errors</label>
+                                    </div>
+                                </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="404s" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">404 Errors</label>
+                                <div class="checkbox-column">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="500s" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">500 Errors</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="500s" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">500 Errors</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="slow_queries" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">Slow Queries</label>
+                                    </div>
 
-                                <!-- checkboxes for slow_queries, response_time, throughput, apdex -->
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="response_time" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">Response Time</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="slow_queries" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">Slow Queries</label>
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="throughput" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">Throughput</label>
+                                    </div>
+                                </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="response_time" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">Response Time</label>
+                                <div class="checkbox-column">
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="apdex" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">Apdex</label>
+                                    </div>
 
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="throughput" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">Throughput</label>
-
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="apdex" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">Apdex</label>
-
-                                <input type="checkbox" name="metric_poster_options[metrics][]" value="top_user_agents" <?php \checked(1, false, false); ?> />
-                                <label for="metric_poster_options[metrics][]">Top UAs</label>
-
+                                    <div class="checkbox-group">
+                                        <input type="checkbox" name="metric_poster_options[metrics][]" value="top_user_agents" <?php \checked(1, false, false); ?> />
+                                        <label for="metric_poster_options[metrics][]">Top UAs</label>
+                                    </div>
+                                </div>
                             </td>
+
+                            <style>
+                                .checkbox-column {
+                                    display: inline-block;
+                                    vertical-align: top;
+                                    margin-right: 20px;
+                                }
+                            </style>
+
+                            <style>
+                                .checkbox-group {
+                                    display: flex;
+                                    align-items: center;
+                                    margin-bottom: 8px;
+                                }
+
+                                .checkbox-group label {
+                                    margin-left: 4px;
+                                }
+                            </style>
 
                             <script>
                                 // on dom ready

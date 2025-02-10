@@ -4,7 +4,8 @@
  * Plugin Name: Metric Poster
  * Plugin URI: https://github.com/Automattic/metrics-poster
  * Description: A plugin to generate a post from a template and post it to a P2 site.
- * Version: 1.0.35
+ * Author: https://github.com/elysium001
+ * Version: 1.0.36
  */
 
 declare(strict_types=1);
@@ -51,12 +52,17 @@ if ( \wp_get_environment_type() === 'local' ) {
 		'supports' => ['title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'custom-fields', 'revisions', 'page-attributes', 'post-formats'],
 	]);
 
+	// Wires up the settings page.
 	$s = new SettingsPage();
 	$s->run();
 
+	// Automatically schedule a cron task to fetch and update weekly data for new metric posts.
 	$cron = new CronSetup();
 	$cron->run();
 
+	// Shortcode for JSON table converter UI (for debugging/demo purposes).
+	// TODO: Remove this shortcode in production.
+	// TODO: Modulize this shortcode and JsonToGutenbergTable class into a separate plugin or composer package.
 	\add_shortcode( 'metric-poster', function () {
 		$template = __DIR__ . '/src/UI/json-table-converter.php';
 		\ob_start();
