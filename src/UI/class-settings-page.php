@@ -413,6 +413,14 @@ class SettingsPage
             $metric_results = $nr_metrics->get_results();
             $pg = new PostGenerator(GUTENBERG_TPL . '/' . $template_file, (int) $week, (int) $year, $metric_results, (bool) $show_header_footer, (string) $app_info->get_app_name());
             $output_post = $pg->create_post();
+
+            if ( isset($output_post) ) {
+                // update post_content for existing post.
+                \wp_update_post( [
+                    'ID' => $app_id,
+                    'post_content' => $output_post,
+                ] );
+            }
         }
 
 
