@@ -422,7 +422,7 @@ class SettingsPage
                     'meta_query'     => array(
                         array(
                             'key'     => 'appid',
-                            'value'   => $appid,
+                            'value'   => $app_id,
                             'compare' => '=',
                         ),
                     ),
