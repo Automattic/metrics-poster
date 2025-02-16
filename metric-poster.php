@@ -5,7 +5,7 @@
  * Plugin URI: https://github.com/Automattic/metrics-poster
  * Description: A plugin to generate a post from a template and post it to a P2 site.
  * Author: https://github.com/elysium001
- * Version: 1.0.37
+ * Version: 1.0.38
  */
 
 declare(strict_types=1);

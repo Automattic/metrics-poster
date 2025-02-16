@@ -415,11 +415,31 @@ class SettingsPage
             $output_post = $pg->create_post();
 
             if ( isset($output_post) ) {
-                // update post_content for existing post.
-                \wp_update_post( [
-                    'ID' => $app_id,
-                    'post_content' => $output_post,
-                ] );
+                // Fetch CPT metric_posts by postmeta appid.
+                $args = array(
+                    'post_type'      => 'metric_posts',
+                    'posts_per_page' => 1,
+                    'meta_query'     => array(
+                        array(
+                            'key'     => 'appid',
+                            'value'   => $appid,
+                            'compare' => '=',
+                        ),
+                    ),
+                );
+
+                $posts = \get_posts($args);
+
+                if (!empty($posts)) {
+                    // Get post ID.
+                    $post_id = $posts[0]->ID;
+
+                    // Update post_content for existing post.
+                    \wp_update_post([
+                        'ID'           => $post_id,
+                        'post_content' => $output_post,
+                    ]);
+                }
             }
         }
 
